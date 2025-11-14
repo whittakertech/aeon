@@ -1,9 +1,9 @@
 site_name: WhittakerTech — Aeon
 site_description: Temporal Engine for WhittakerTech
 site_author: Lee Whittaker
-repo_url: https://github.com/whittaker-tech/aeon
-repo_name: whittaker-tech/aeon
-site_url: https://whittaker-tech.github.io/aeon/
+repo_url: https://github.com/whittakertech/aeon
+repo_name: whittakertech/aeon
+site_url: https://aeon.whittakertech.com/
 
 theme:
   name: material
