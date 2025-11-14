@@ -1,0 +1,49 @@
+name: 🚀 Deploy Aeon Docs (MkDocs Material)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧩 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🧱 Cache MkDocs Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: 📦 Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install "mkdocs>=1.6,<2.0" "mkdocs-material>=9.5,<10.0" pymdown-extensions
+
+      - name: 🧪 Build Site
+        run: mkdocs build --strict
+
+      - name: 🚀 Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force --clean --message "Deploy Aeon Docs [skip ci]"
