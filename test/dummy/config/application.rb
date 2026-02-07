@@ -16,5 +16,9 @@ module Dummy
     # For compatibility with applications that use this app as the
     # temporary Rails application for engine testing.
     config.eager_load = false
+
+    # Discover engine migrations directly for dev/test without running
+    # the install generator copy step.
+    config.paths['db/migrate'].concat(WhittakerTech::Aeon::Engine.paths['db/migrate'].expanded)
   end
 end

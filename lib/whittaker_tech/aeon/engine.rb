@@ -5,7 +5,6 @@ module WhittakerTech
     # Mountable, API-only Rails engine. Provides initializers that:
     # - enforce UUID primary keys for all generated models
     # - set the application time zone and ActiveRecord default to UTC
-    # - append engine migrations so the host app discovers them automatically
     # - set +schema_format = :sql+ for faithful +structure.sql+ dumps
     # - re-assert {Aeon.table_name_prefix} after +isolate_namespace+ to keep
     #   models in the +wt_aeon+ PostgreSQL schema
@@ -21,12 +20,6 @@ module WhittakerTech
 
       config.time_zone = 'UTC'
       config.active_record.default_timezone = :utc
-
-      # Append engine migration paths so the host discovers them via
-      # +rails db:migrate+ without an install generator copy step.
-      initializer 'aeon.migrations' do |app|
-        app.config.paths['db/migrate'].concat(config.paths['db/migrate'].expanded)
-      end
 
       # Force SQL schema format so +structure.sql+ captures PG-specific
       # features (schemas, GiST indexes, partial indexes, tstzrange columns).
