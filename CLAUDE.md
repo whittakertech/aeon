@@ -73,7 +73,19 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 - Services bypass guards via `update_column`/`update_columns`/`update_all` (skip callbacks by design)
 - Monotonic projection enforced at service level (Projector's `already_projected?` check)
 
-**Next: Phase 9 — Tests (structural)**
+**Phase 9 — Structural Tests: COMPLETE**
+
+- 58 examples, 0 failures across 6 spec files
+- `spec/services/whittaker_tech/aeon/projector_spec.rb` — temporal kind expansion (instant/span/schedule), idempotency, horizon enforcement (max window, valid_to cap, monotonic), upsert correctness (time_range consistency, projection_fingerprint)
+- `spec/services/whittaker_tech/aeon/forker_spec.rb` — fork future (close old, create successor, invalidate future, preserve past, inline projection), fork all (invalidates earliest occurrences), validation (pivot bounds, closed allocation, not found), disposal_policy inheritance
+- `spec/services/whittaker_tech/aeon/override_applier_spec.rb` — cancellation, rescheduling, constraints (unique, invalidated, no-action, not found)
+- `spec/models/whittaker_tech/aeon/guards_spec.rb` — all TEMPORAL_FIELDS blocked on Allocation, all COORDINATE_FIELDS blocked on Occurrence, metadata fields updatable
+- `spec/concerns/whittaker_tech/aeon/schedulable_spec.rb` — associations (has_one, has_many through), ensure_projected!, fork_future, fork_all, override_occurrence, error handling
+- `spec/jobs/whittaker_tech/aeon/projection_job_spec.rb` — delegation, idempotency, queue name
+- Factory: `spec/factories/whittaker_tech/aeon/allocations.rb` with `:instant`, `:span`, `:projected` traits
+- Support: `spec/support/schedulable_host.rb` (test host model with UUID PK, `schedule :time_slot`)
+
+**Next: Phase 10 — Performance pass**
 
 ## Build Order (Strict)
 
@@ -95,7 +107,7 @@ Phases:
 9. ~~Schedulable DSL concern~~ **DONE**
 10. ~~Projection worker (ActiveJob/Sidekiq)~~ **DONE**
 11. ~~Guards (immutability enforcement)~~ **DONE**
-12. Tests (structural, not micro)
+12. ~~Tests (structural, not micro)~~ **DONE**
 13. Performance pass
 
 ## Environment
