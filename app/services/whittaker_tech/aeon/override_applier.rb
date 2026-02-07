@@ -17,10 +17,12 @@ module WhittakerTech
       # @param occurrence_id [String] UUID of the occurrence to override
       # @param canceled [Boolean] whether to cancel the occurrence (default: false)
       # @param replacement_time_range [String, nil] PG tstzrange literal for
-      #   rescheduling (mutually exclusive with +canceled: true+, though both
-      #   may be set)
+      #   rescheduling (mutually exclusive with +canceled: true+, setting both will
+      #   raise an ArgumentError)
       # @return [Override] the created override record
       def self.call(occurrence_id:, canceled: false, replacement_time_range: nil)
+        raise ArgumentError, 'cannot cancel and replace simultaneously' if @canceled && @replacement_time_range 
+
         new(
           occurrence_id: occurrence_id,
           canceled: canceled,
