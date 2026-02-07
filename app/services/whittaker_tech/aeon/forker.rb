@@ -60,13 +60,19 @@ module WhittakerTech
       end
 
       def invalidate_future_occurrences!(old_allocation, new_allocation)
-        Occurrence.where(allocation_id: old_allocation.id)
-                  .where(invalidated_at: nil)
-                  .where("starts_at >= ?", @pivot)
-                  .update_all(
-                    invalidated_at: Time.current,
-                    invalidated_by_allocation_id: new_allocation.id
-                  )
+        scope = Occurrence.where(allocation_id: old_allocation.id)
+                          .where(invalidated_at: nil)
+
+        # When pivot == valid_from (fork-all), invalidate every occurrence.
+        # The starts_at filter is skipped because IceCube truncates times to
+        # millisecond precision while PG timestamptz preserves microseconds,
+        # so the earliest occurrence can precede valid_from by < 1 ms.
+        scope = scope.where("starts_at >= ?", @pivot) unless @pivot == old_allocation.valid_from
+
+        scope.update_all(
+          invalidated_at: Time.current,
+          invalidated_by_allocation_id: new_allocation.id
+        )
       end
 
       def project_successor!(new_allocation)
