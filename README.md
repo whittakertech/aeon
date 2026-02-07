@@ -51,13 +51,25 @@ WhittakerTech::Aeon.configure do |config|
 end
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `projection_buffer` | `ActiveSupport::Duration` | `14.days` | How far ahead of `Time.current` the projector extends by default |
-| `max_projection_window` | `ActiveSupport::Duration` | `1.year` | Absolute ceiling on how far a single allocation can be projected |
-| `disposal_policy` | `Symbol` | `:windowed` | Retention strategy for invalidated occurrences (`:ephemeral`, `:windowed`, `:historical`, `:permanent`) |
-| `invalidated_retention_window` | `ActiveSupport::Duration` | `60.days` | How long invalidated occurrences are retained before purging |
-| `queue_adapter` | `Symbol` | `:sidekiq` | ActiveJob queue backend for `ProjectionJob` |
+| Option                         | Type                      | Default     | Description                                                                                             |
+|--------------------------------|---------------------------|-------------|---------------------------------------------------------------------------------------------------------|
+| `projection_buffer`            | `ActiveSupport::Duration` | `14.days`   | How far ahead of `Time.current` the projector extends by default                                        |
+| `max_projection_window`        | `ActiveSupport::Duration` | `1.year`    | Absolute ceiling on how far a single allocation can be projected                                        |
+| `disposal_policy`              | `Symbol`                  | `:windowed` | Retention strategy for invalidated occurrences (`:ephemeral`, `:windowed`, `:historical`, `:permanent`) |
+| `invalidated_retention_window` | `ActiveSupport::Duration` | `60.days`   | How long invalidated occurrences are retained before purging                                            |
+| `queue_adapter`                | `Symbol`                  | `:sidekiq`  | ActiveJob queue backend for `ProjectionJob`                                                             |
+
+#### Disposal Policies
+
+The disposal policy determines how invalidated occurrences are handled.
+
+| Policy        | Description                                                                  |
+|---------------|------------------------------------------------------------------------------|
+| `:ephemeral`  | Invalidated occurrences are immediately purged.                              |
+| `:windowed`   | Invalidated occurrences are retained for a fixed window before being purged. |
+| `:historical` | Invalidated occurrences are retained indefinitely.                           |
+| `:permanent`  | Invalidated occurrences are never purged.                                    |
+
 
 ## Usage
 
