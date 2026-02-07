@@ -3,17 +3,14 @@ module WhittakerTech
     class Engine < ::Rails::Engine
       isolate_namespace WhittakerTech::Aeon
 
-      config.generators do |g|
-        g.test_framework :rspec
-        g.fixture_replacement :factory_bot
-        g.factory_bot dir: "spec/factories"
-      end
-
-      initializer "whittaker_tech.aeon.load_helpers" do |app|
-        app.config.to_prepare do
-          # Load concerns and helpers
+      initializer "aeon.generators" do |app|
+        app.config.generators do |g|
+          g.orm :active_record, primary_key_type: :uuid
         end
       end
+
+      config.time_zone = "UTC"
+      config.active_record.default_timezone = :utc
     end
   end
 end

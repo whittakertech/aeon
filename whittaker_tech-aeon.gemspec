@@ -1,21 +1,25 @@
+require_relative "lib/whittaker_tech/aeon/version"
+
 Gem::Specification.new do |spec|
-  spec.name          = "whittaker_tech-aeon"
-  spec.version       = "0.1.0"
-  spec.authors       = ["WhittakerTech"]
-  spec.email         = ["lee@whittakertech.com"]
-  spec.summary       = "Aeon: Temporal Logic for WhittakerTech"
-  spec.description   = "Comprehensive scheduling, recurrence, and temporal caching engine for Rails applications"
-  spec.homepage      = "https://github.com/whittakertech/aeon"
-  spec.license       = "MIT"
+  spec.name        = "whittaker_tech-aeon"
+  spec.version     = WhittakerTech::Aeon::VERSION
+  spec.authors     = ["Lee Whittaker"]
+  spec.email       = ["lee@whittaker.tech"]
+  spec.homepage    = "https://github.com/whittakertech/aeon"
+  spec.summary     = "Temporal physics engine for Rails"
+  spec.description = "A Rails engine that projects immutable temporal laws (Allocations) into materialized Occurrences while preserving historical integrity through forward-only timeline forking."
+  spec.license     = "MIT"
 
-  spec.files = Dir["lib/**/*", "app/**/*", "config/**/*", "db/**/*", "spec/**/*", "README.md", "MIT-LICENSE", "Rakefile", "gemspec"]
-  spec.test_files = Dir["spec/**/*"]
+  spec.metadata["homepage_uri"]    = spec.homepage
+  spec.metadata["source_code_uri"] = spec.homepage
+  spec.metadata["changelog_uri"]   = "#{spec.homepage}/blob/master/CHANGELOG.md"
 
-  spec.add_dependency "rails", ">= 7.1"
-  spec.add_dependency "ice_cube", "~> 0.17"
-  spec.add_dependency "redis", "~> 5.0"
+  spec.files = Dir.chdir(File.expand_path(__dir__)) do
+    Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile"]
+  end
 
-  spec.add_development_dependency "rspec-rails", "~> 6.0"
-  spec.add_development_dependency "factory_bot_rails", "~> 6.2"
-  spec.add_development_dependency "pg", "~> 1.5"
+  spec.required_ruby_version = ">= 3.1"
+
+  spec.add_dependency "rails", "~> 7.1.0"
+  spec.add_dependency "pg", ">= 1.1"
 end
