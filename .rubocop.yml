@@ -1,0 +1,57 @@
+plugins:
+  - rubocop-rails
+  - rubocop-rspec
+  - rubocop-performance
+
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "test/dummy/**/*"
+    - "db/**/*"
+    - "bin/**/*"
+    - "vendor/**/*"
+    - "Gemfile.lock"
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/MethodLength:
+  Max: 20
+  Exclude:
+    - "app/models/concerns/**/*"
+
+Metrics/AbcSize:
+  Max: 35
+
+Metrics/ClassLength:
+  Max: 150
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "app/models/concerns/**/*"
+
+Rails/SkipsModelValidations:
+  Enabled: false
+
+Rails/HasManyOrHasOneDependent:
+  Enabled: false
+
+Rails/TransactionExitStatement:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Max: 20
+
+RSpec/DescribeClass:
+  Exclude:
+    - "spec/performance/**/*"
+    - "spec/models/whittaker_tech/aeon/guards_spec.rb"
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false

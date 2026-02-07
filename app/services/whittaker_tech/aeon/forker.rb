@@ -1,16 +1,44 @@
+# frozen_string_literal: true
+
 module WhittakerTech
   module Aeon
+    # Stateless service that performs forward-only timeline forking. Closes the
+    # current {Allocation} at a pivot point, creates a successor with lineage,
+    # set-based invalidates future {Occurrence} rows, and inline-projects the
+    # new allocation.
+    #
+    # Two modes:
+    # - **Fork future** — +pivot > valid_from+: past occurrences are preserved,
+    #   only future ones are invalidated.
+    # - **Fork all** — +pivot == valid_from+: every occurrence is invalidated
+    #   and the allocation is fully replaced.
+    #
+    # @example Fork at a future point
+    #   Forker.call(allocation_id: alloc.id, pivot: 1.week.from_now, rrule: new_rule)
+    #
+    # @example Replace entirely (fork all)
+    #   Forker.call(allocation_id: alloc.id, pivot: alloc.valid_from, rrule: new_rule)
     class Forker
+      # @param allocation_id [String] UUID of the allocation to fork
+      # @param pivot [Time] the point at which to split the timeline
+      # @param new_attrs [Hash] attribute overrides for the successor allocation
+      # @return [Allocation] the newly created successor
       def self.call(allocation_id:, pivot:, **new_attrs)
         new(allocation_id: allocation_id, pivot: pivot, new_attrs: new_attrs).call
       end
 
+      # @param allocation_id [String] UUID of the allocation to fork
+      # @param pivot [Time] the point at which to split the timeline
+      # @param new_attrs [Hash] attribute overrides for the successor
       def initialize(allocation_id:, pivot:, new_attrs:)
         @allocation_id = allocation_id
         @pivot = pivot
         @new_attrs = new_attrs
       end
 
+      # Executes the fork within a serialised transaction.
+      #
+      # @return [Allocation] the successor allocation
       def call
         Allocation.transaction do
           old_allocation = lock_allocation!
@@ -25,24 +53,32 @@ module WhittakerTech
 
       private
 
+      # @return [Allocation]
       def lock_allocation!
-        Allocation.lock("FOR UPDATE NOWAIT").find(@allocation_id)
+        Allocation.lock('FOR UPDATE NOWAIT').find(@allocation_id)
       end
 
+      # @raise [ArgumentError] if pivot precedes +valid_from+ or if
+      #   the allocation is already closed
       def validate_pivot!(old_allocation)
         if @pivot < old_allocation.valid_from
           raise ArgumentError, "pivot cannot be before allocation valid_from (#{old_allocation.valid_from.iso8601})"
         end
 
-        if old_allocation.valid_to.present?
-          raise ArgumentError, "allocation is already closed (valid_to: #{old_allocation.valid_to.iso8601})"
-        end
+        return if old_allocation.valid_to.blank?
+
+        raise ArgumentError, "allocation is already closed (valid_to: #{old_allocation.valid_to.iso8601})"
       end
 
+      # Sets +valid_to+ on the old allocation via +update_columns+ (bypasses
+      # the immutability callback).
       def close_allocation!(old_allocation)
         old_allocation.update_columns(valid_to: @pivot)
       end
 
+      # Creates a new allocation inheriting the old one's fields, with
+      # +supersedes_allocation_id+ linking to the predecessor.
+      # @return [Allocation]
       def create_successor!(old_allocation)
         Allocation.create!(
           schedulable_type: old_allocation.schedulable_type,
@@ -60,15 +96,14 @@ module WhittakerTech
         )
       end
 
+      # Set-based SQL invalidation of future occurrences. When +pivot == valid_from+
+      # (fork-all), the +starts_at >=+ filter is skipped to handle IceCube's
+      # millisecond truncation vs PG's microsecond precision.
       def invalidate_future_occurrences!(old_allocation, new_allocation)
         scope = Occurrence.where(allocation_id: old_allocation.id)
                           .where(invalidated_at: nil)
 
-        # When pivot == valid_from (fork-all), invalidate every occurrence.
-        # The starts_at filter is skipped because IceCube truncates times to
-        # millisecond precision while PG timestamptz preserves microseconds,
-        # so the earliest occurrence can precede valid_from by < 1 ms.
-        scope = scope.where("starts_at >= ?", @pivot) unless @pivot == old_allocation.valid_from
+        scope = scope.where(starts_at: @pivot..) unless @pivot == old_allocation.valid_from
 
         scope.update_all(
           invalidated_at: Time.current,
@@ -76,6 +111,8 @@ module WhittakerTech
         )
       end
 
+      # Inline-projects the successor allocation for the configured
+      # {Configuration#projection_buffer}.
       def project_successor!(new_allocation)
         target = @pivot + WhittakerTech::Aeon.configuration.projection_buffer
         Projector.call(allocation_id: new_allocation.id, target_until: target)

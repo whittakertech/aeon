@@ -1,11 +1,13 @@
-require "rails_helper"
+# frozen_string_literal: true
+
+require 'rails_helper'
 
 RSpec.describe WhittakerTech::Aeon::OverrideApplier do
   let(:alloc) { create(:allocation, :projected) }
   let(:occurrence) { alloc.occurrences.first }
 
-  describe "cancellation" do
-    it "creates a canceled override" do
+  describe 'cancellation' do
+    it 'creates a canceled override' do
       override = described_class.call(occurrence_id: occurrence.id, canceled: true)
 
       expect(override).to be_persisted
@@ -15,8 +17,8 @@ RSpec.describe WhittakerTech::Aeon::OverrideApplier do
     end
   end
 
-  describe "rescheduling" do
-    it "creates an override with a replacement time range" do
+  describe 'rescheduling' do
+    it 'creates an override with a replacement time range' do
       new_start = occurrence.starts_at + 2.hours
       new_end = new_start + 3600
       range = "[#{new_start.iso8601},#{new_end.iso8601})"
@@ -32,36 +34,36 @@ RSpec.describe WhittakerTech::Aeon::OverrideApplier do
     end
   end
 
-  describe "constraints" do
-    it "enforces one override per occurrence via DB unique index" do
+  describe 'constraints' do
+    it 'enforces one override per occurrence via DB unique index' do
       described_class.call(occurrence_id: occurrence.id, canceled: true)
 
-      expect {
+      expect do
         described_class.call(occurrence_id: occurrence.id, canceled: true)
-      }.to raise_error(ActiveRecord::RecordNotUnique)
+      end.to raise_error(ActiveRecord::RecordNotUnique)
     end
 
-    it "rejects overriding an invalidated occurrence" do
+    it 'rejects overriding an invalidated occurrence' do
       occurrence.update_columns(
         invalidated_at: Time.current,
         invalidated_by_allocation_id: alloc.id
       )
 
-      expect {
+      expect do
         described_class.call(occurrence_id: occurrence.id, canceled: true)
-      }.to raise_error(ArgumentError, /invalidated/)
+      end.to raise_error(ArgumentError, /invalidated/)
     end
 
-    it "rejects a no-action override" do
-      expect {
+    it 'rejects a no-action override' do
+      expect do
         described_class.call(occurrence_id: occurrence.id)
-      }.to raise_error(ArgumentError, /canceled.*replacement_time_range/)
+      end.to raise_error(ArgumentError, /canceled.*replacement_time_range/)
     end
 
-    it "raises RecordNotFound for nonexistent occurrence" do
-      expect {
+    it 'raises RecordNotFound for nonexistent occurrence' do
+      expect do
         described_class.call(occurrence_id: SecureRandom.uuid, canceled: true)
-      }.to raise_error(ActiveRecord::RecordNotFound)
+      end.to raise_error(ActiveRecord::RecordNotFound)
     end
   end
 end

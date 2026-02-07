@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
-  factory :allocation, class: "WhittakerTech::Aeon::Allocation" do
+  factory :allocation, class: 'WhittakerTech::Aeon::Allocation' do
     schedulable factory: :schedulable_host
     temporal_kind { :schedule }
     starts_at { 7.days.ago.change(usec: 0) }
     duration_seconds { 3600 }
-    timezone { "UTC" }
+    timezone { 'UTC' }
     rrule { IceCube::Schedule.new(starts_at) { |s| s.add_recurrence_rule IceCube::Rule.daily }.to_hash }
     valid_from { starts_at }
     projected_until { starts_at }

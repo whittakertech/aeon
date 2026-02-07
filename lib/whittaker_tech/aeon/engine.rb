@@ -1,28 +1,47 @@
+# frozen_string_literal: true
+
 module WhittakerTech
   module Aeon
+    # Mountable, API-only Rails engine. Provides initializers that:
+    # - enforce UUID primary keys for all generated models
+    # - set the application time zone and ActiveRecord default to UTC
+    # - append engine migrations so the host app discovers them automatically
+    # - set +schema_format = :sql+ for faithful +structure.sql+ dumps
+    # - re-assert {Aeon.table_name_prefix} after +isolate_namespace+ to keep
+    #   models in the +wt_aeon+ PostgreSQL schema
     class Engine < ::Rails::Engine
       isolate_namespace WhittakerTech::Aeon
 
-      initializer "aeon.generators" do |app|
+      # Configure generators to use UUID primary keys by default.
+      initializer 'aeon.generators' do |app|
         app.config.generators do |g|
           g.orm :active_record, primary_key_type: :uuid
         end
       end
 
-      config.time_zone = "UTC"
+      config.time_zone = 'UTC'
       config.active_record.default_timezone = :utc
 
-      initializer "aeon.migrations" do |app|
-        app.config.paths["db/migrate"].concat(config.paths["db/migrate"].expanded)
+      # Append engine migration paths so the host discovers them via
+      # +rails db:migrate+ without an install generator copy step.
+      initializer 'aeon.migrations' do |app|
+        app.config.paths['db/migrate'].concat(config.paths['db/migrate'].expanded)
       end
 
-      initializer "aeon.schema_format" do |app|
+      # Force SQL schema format so +structure.sql+ captures PG-specific
+      # features (schemas, GiST indexes, partial indexes, tstzrange columns).
+      initializer 'aeon.schema_format' do |app|
         app.config.active_record.schema_format = :sql
       end
 
-      initializer "aeon.table_name_prefix", after: "aeon.schema_format" do
+      # +isolate_namespace+ redefines +table_name_prefix+ via an
+      # +on_load(:active_record)+ callback that always wins over the static
+      # method defined in {Aeon}. This initializer registers a later
+      # +on_load+ callback to re-assert the prefix, ensuring models resolve
+      # to +wt_aeon.*+ tables.
+      initializer 'aeon.table_name_prefix', after: 'aeon.schema_format' do
         ActiveSupport.on_load(:active_record) do
-          WhittakerTech::Aeon.singleton_class.redefine_method(:table_name_prefix) { "wt_aeon." }
+          WhittakerTech::Aeon.singleton_class.redefine_method(:table_name_prefix) { 'wt_aeon.' }
         end
       end
     end
