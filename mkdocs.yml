@@ -1,0 +1,45 @@
+site_name: WhittakerTech Aeon
+site_url: https://aeon.whittakertech.com
+repo_url: https://github.com/WhittakerTech/aeon
+repo_name: WhittakerTech/aeon
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Introduction: index.md
+  - Installation: installation.md
+  - Core Concepts: concepts.md
+  - Configuration: configuration.md
+  - Usage Guide: usage.md
+  - Architecture: architecture.md
+  - Invariants & Guards: guards.md
+  - API Reference: api.md
+  - Changelog: changelog.md

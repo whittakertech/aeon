@@ -227,6 +227,6 @@ end
 
 ## Key Files Reference
 
-- `ARCHETECTURE.md` — Full 4+1 architecture document
+- `ARCHITECTURE.md` — Full 4+1 architecture document
 - `EXECUTION_PLAN.md` — Phase-by-phase implementation roadmap
 - `../docker-compose.yml` — PostgreSQL 16 + Redis 7 services

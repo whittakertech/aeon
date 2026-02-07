@@ -1,0 +1,6 @@
+--output-dir doc/api
+--markup markdown
+--no-private
+--protected
+app/**/*.rb
+lib/**/*.rb

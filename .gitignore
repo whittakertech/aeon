@@ -13,3 +13,6 @@ Gemfile.lock
 .claude/
 .idea/
 tmp/
+site/
+doc/
+.yardoc/
