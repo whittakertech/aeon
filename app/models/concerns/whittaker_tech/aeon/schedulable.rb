@@ -38,7 +38,7 @@ module WhittakerTech
         # @return [void]
         def schedule(name, dependent: :nullify)
           has_one name,
-                  -> { where(valid_to: nil) },
+                  -> { where(valid_to: nil, schedulable_label: name.to_s) },
                   as: :schedulable,
                   class_name: 'WhittakerTech::Aeon::Allocation',
                   inverse_of: :schedulable,

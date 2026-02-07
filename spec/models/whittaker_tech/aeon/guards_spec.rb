@@ -16,6 +16,7 @@ RSpec.describe 'Immutability guards' do
                     when 'rrule' then { 'rule_type' => 'IceCube::MinutelyRule' }
                     when 'supersedes_allocation_id', 'schedulable_id' then SecureRandom.uuid
                     when 'schedulable_type' then 'SomeOtherModel'
+                    when 'schedulable_label' then 'other_label'
                     end
 
         alloc.reload

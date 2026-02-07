@@ -84,6 +84,7 @@ module WhittakerTech
         Allocation.create!(
           schedulable_type: old_allocation.schedulable_type,
           schedulable_id: old_allocation.schedulable_id,
+          schedulable_label: old_allocation.schedulable_label,
           temporal_kind: @new_attrs.fetch(:temporal_kind, old_allocation.temporal_kind),
           starts_at: @new_attrs.fetch(:starts_at, @pivot),
           duration_seconds: @new_attrs.fetch(:duration_seconds, old_allocation.duration_seconds),

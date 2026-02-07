@@ -3,6 +3,7 @@
 FactoryBot.define do
   factory :allocation, class: 'WhittakerTech::Aeon::Allocation' do
     schedulable factory: :schedulable_host
+    schedulable_label { 'time_slot' }
     temporal_kind { :schedule }
     starts_at { 7.days.ago.change(usec: 0) }
     duration_seconds { 3600 }

@@ -11,6 +11,7 @@ RSpec.describe WhittakerTech::Aeon::Schedulable do
     schedule = IceCube::Schedule.new(start) { |s| s.add_recurrence_rule IceCube::Rule.daily }
     WhittakerTech::Aeon::Allocation.create!(
       schedulable: host,
+      schedulable_label: 'time_slot',
       temporal_kind: :schedule,
       starts_at: start,
       duration_seconds: 3600,
@@ -118,6 +119,60 @@ RSpec.describe WhittakerTech::Aeon::Schedulable do
         .to raise_error(ArgumentError, /no active time_slot/)
       expect { empty_host.ensure_projected! }
         .to raise_error(ArgumentError, /no active time_slot/)
+    end
+  end
+
+  describe 'multi-label coexistence' do
+    let(:multi_host) { MultiScheduleHost.create!(name: 'multi-host') }
+
+    let!(:time_slot_alloc) do
+      schedule = IceCube::Schedule.new(start) { |s| s.add_recurrence_rule IceCube::Rule.daily }
+      WhittakerTech::Aeon::Allocation.create!(
+        schedulable: multi_host,
+        schedulable_label: 'time_slot',
+        temporal_kind: :schedule,
+        starts_at: start,
+        duration_seconds: 3600,
+        timezone: 'UTC',
+        rrule: schedule.to_hash,
+        valid_from: start,
+        projected_until: start
+      )
+    end
+
+    let!(:availability_alloc) do
+      schedule = IceCube::Schedule.new(start) { |s| s.add_recurrence_rule IceCube::Rule.weekly }
+      WhittakerTech::Aeon::Allocation.create!(
+        schedulable: multi_host,
+        schedulable_label: 'availability',
+        temporal_kind: :schedule,
+        starts_at: start,
+        duration_seconds: 7200,
+        timezone: 'UTC',
+        rrule: schedule.to_hash,
+        valid_from: start,
+        projected_until: start
+      )
+    end
+
+    it 'allows two active allocations with different labels on the same schedulable' do
+      expect(time_slot_alloc).to be_persisted
+      expect(availability_alloc).to be_persisted
+    end
+
+    it 'scopes has_one by label so each returns the correct allocation' do
+      expect(multi_host.time_slot).to eq(time_slot_alloc)
+      expect(multi_host.availability).to eq(availability_alloc)
+    end
+
+    it 'scopes occurrences through the correct allocation' do
+      WhittakerTech::Aeon::Projector.call(allocation_id: time_slot_alloc.id, target_until: 14.days.from_now)
+      WhittakerTech::Aeon::Projector.call(allocation_id: availability_alloc.id, target_until: 14.days.from_now)
+
+      ts_count = multi_host.time_slot_occurrences.count
+      av_count = multi_host.availability_occurrences.count
+
+      expect(ts_count).to be > av_count
     end
   end
 end

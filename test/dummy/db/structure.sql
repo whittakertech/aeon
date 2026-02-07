@@ -1,4 +1,4 @@
-\restrict 6ASd9T7HCOnysxcldmbfsY6kAAe1fhZmmgZ8zMMQRThJtVz4jlGzvQeQC9pSqe1
+\restrict bTkCMVkk8iXiAq0k6CnUPRUQjrXUhQUDySg1ABQ1rzrBpgl2RJvgfUpxwYZKk6V
 
 -- Dumped from database version 16.11 (Debian 16.11-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -44,6 +44,7 @@ CREATE FUNCTION wt_aeon.guard_allocation_temporal_fields() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
+  -- Tier 1: hard-blocked fields (no bypass)
   IF (OLD.temporal_kind IS DISTINCT FROM NEW.temporal_kind) OR
      (OLD.starts_at IS DISTINCT FROM NEW.starts_at) OR
      (OLD.duration_seconds IS DISTINCT FROM NEW.duration_seconds) OR
@@ -52,11 +53,13 @@ BEGIN
      (OLD.valid_from IS DISTINCT FROM NEW.valid_from) OR
      (OLD.supersedes_allocation_id IS DISTINCT FROM NEW.supersedes_allocation_id) OR
      (OLD.schedulable_type IS DISTINCT FROM NEW.schedulable_type) OR
-     (OLD.schedulable_id IS DISTINCT FROM NEW.schedulable_id) THEN
+     (OLD.schedulable_id IS DISTINCT FROM NEW.schedulable_id) OR
+     (OLD.schedulable_label IS DISTINCT FROM NEW.schedulable_label) THEN
     RAISE EXCEPTION 'cannot mutate temporal fields on a persisted Allocation'
       USING ERRCODE = 'raise_exception';
   END IF;
 
+  -- Tier 2: service-mutable fields (bypass via session variable)
   IF current_setting('aeon.bypass_guard', true) = 'true' THEN
     RETURN NEW;
   END IF;
@@ -109,6 +112,18 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: schedulable_hosts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.schedulable_hosts (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying,
+    created_at timestamp(6) without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp(6) without time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -137,7 +152,8 @@ CREATE TABLE wt_aeon.allocations (
     disposal_policy character varying,
     attachment_version_ref character varying,
     created_at timestamp(6) with time zone NOT NULL,
-    updated_at timestamp(6) with time zone NOT NULL
+    updated_at timestamp(6) with time zone NOT NULL,
+    schedulable_label character varying(64) NOT NULL
 );
 
 
@@ -185,6 +201,14 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
+-- Name: schedulable_hosts schedulable_hosts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedulable_hosts
+    ADD CONSTRAINT schedulable_hosts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -220,14 +244,14 @@ ALTER TABLE ONLY wt_aeon.overrides
 -- Name: idx_aeon_allocations_active_per_schedulable; Type: INDEX; Schema: wt_aeon; Owner: -
 --
 
-CREATE UNIQUE INDEX idx_aeon_allocations_active_per_schedulable ON wt_aeon.allocations USING btree (schedulable_type, schedulable_id) WHERE (valid_to IS NULL);
+CREATE UNIQUE INDEX idx_aeon_allocations_active_per_schedulable ON wt_aeon.allocations USING btree (schedulable_type, schedulable_id, schedulable_label) WHERE (valid_to IS NULL);
 
 
 --
 -- Name: idx_aeon_allocations_on_schedulable; Type: INDEX; Schema: wt_aeon; Owner: -
 --
 
-CREATE INDEX idx_aeon_allocations_on_schedulable ON wt_aeon.allocations USING btree (schedulable_type, schedulable_id);
+CREATE INDEX idx_aeon_allocations_on_schedulable ON wt_aeon.allocations USING btree (schedulable_type, schedulable_id, schedulable_label);
 
 
 --
@@ -308,10 +332,11 @@ ALTER TABLE ONLY wt_aeon.overrides
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6ASd9T7HCOnysxcldmbfsY6kAAe1fhZmmgZ8zMMQRThJtVz4jlGzvQeQC9pSqe1
+\unrestrict bTkCMVkk8iXiAq0k6CnUPRUQjrXUhQUDySg1ABQ1rzrBpgl2RJvgfUpxwYZKk6V
 
 SET search_path TO public,wt_aeon;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20250601000002'),
 ('20250601000001');
 

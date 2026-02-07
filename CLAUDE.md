@@ -1,149 +1,87 @@
-# CLAUDE.md — WhittakerTech::Aeon
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What This Is
 
 Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as a **temporal physics engine**. It projects immutable temporal laws (Allocations) into materialized Occurrences while preserving historical integrity through forward-only timeline forking. It is **not** a calendar, job runner, audit engine, or domain validator.
 
-## Current State
-
-**Phase 0 — Engine Skeleton: COMPLETE**
-
-- Rails 7.1.6 / Ruby 3.1.4
-- Mountable, API-only, isolated namespace
-- UUID primary keys configured via engine generator initializer
-- UTC enforced (`config.time_zone = "UTC"`, `default_timezone = :utc`)
-- PostgreSQL via Docker (`127.0.0.1:5432`, user/pass: `postgres/postgres`)
-- Databases created: `whittaker_tech_aeon_development`, `whittaker_tech_aeon_test`
-- RSpec + FactoryBot configured
-- Dummy app at `test/dummy/` with explicit `config.root`
-
-**Phase 1 — Database Physics (Migrations): COMPLETE**
-
-- `pgcrypto` extension enabled for UUID generation
-- Dedicated PostgreSQL schema `wt_aeon` (tables use short names: `wt_aeon.allocations`, etc.)
-- `schema_format = :sql` — `structure.sql` captures PG schema, GiST indexes, partial indexes, tstzrange columns
-- `wt_aeon.allocations` — polymorphic schedulable, temporal_kind enum, rrule jsonb, fork lineage via `supersedes_allocation_id`, partial unique index enforcing one active allocation per schedulable
-- `wt_aeon.occurrences` — tstzrange `time_range` with GiST index, unique `(allocation_id, starts_at)` for idempotent upsert, partial index on active rows, FK to allocations for both `allocation_id` and `invalidated_by_allocation_id`
-- `wt_aeon.overrides` — unique `occurrence_id` constraint (one override per occurrence), `replacement_time_range` tstzrange, `canceled` boolean
-
-**Phase 2 — Models (thin): COMPLETE**
-
-- `Allocation` — `temporal_kind` enum (`instant`, `span`, `schedule`), polymorphic `schedulable`, fork lineage (`superseded_allocation` / `superseding_allocation`), `has_many :occurrences`, `has_many :invalidated_occurrences`
-- `Occurrence` — `state` enum (`active`), `belongs_to :allocation` / `:invalidated_by_allocation`, `has_one :override`, scopes: `active` (matches partial index), `invalidated`, `within_range` (GiST `&&` operator)
-- `Override` — `belongs_to :occurrence` (no validations — DB enforces constraints)
-- `table_name_prefix` defined on `WhittakerTech::Aeon` module in `lib/whittaker_tech/aeon.rb` before engine load, preempting `isolate_namespace` override
-
-**Phase 3 — Projector service: COMPLETE**
-
-- Stateless service: `Projector.call(allocation_id:, target_until:)`
-- Lock allocation (`FOR UPDATE NOWAIT`), expand IceCube rrules, upsert occurrences (`INSERT ON CONFLICT DO NOTHING`), advance `projected_until` frontier
-- Handles all three temporal kinds: `instant`, `span`, `schedule`
-- Capped by `max_projection_window` and `valid_to`
-
-**Phase 4 — Forker service: COMPLETE**
-
-- Stateless service: `Forker.call(allocation_id:, pivot:, **new_attrs)`
-- Lock → validate pivot → close old allocation (`valid_to = pivot`) → create successor with lineage → invalidate future occurrences (set-based SQL) → project successor inline
-- When `pivot == valid_from` (fork-all), skips `starts_at >=` filter to handle IceCube millisecond truncation vs PG microsecond precision
-
-**Phase 5 — OverrideApplier service: COMPLETE**
-
-- Stateless service: `OverrideApplier.call(occurrence_id:, canceled:, replacement_time_range:)`
-- Finds occurrence, validates it's active (not invalidated), creates override row
-- DB unique index enforces one override per occurrence; never triggers re-projection
-
-**Phase 6 — Schedulable DSL concern: COMPLETE**
-
-- `WhittakerTech::Aeon::Schedulable` concern with `schedule :name` macro
-- Generates: `has_one :name` (active allocation, scoped `valid_to: nil`), `has_many :name_occurrences` (through)
-- Exposes verbs: `fork_future(pivot:, **new_attrs)`, `fork_all(**new_attrs)`, `override_occurrence(starts_at:, **attrs)`, `ensure_projected!(window:)`
-- `has_many :through` requires explicit `class_name: "WhittakerTech::Aeon::Occurrence"` for cross-namespace resolution
-
-**Phase 7 — Projection Worker: COMPLETE**
-
-- `ProjectionJob < ApplicationJob`, queue: `aeon_projection`
-- `perform(allocation_id, horizon_iso8601)` → delegates to `Projector.call`
-- Serializes horizon as ISO 8601 string for safe job serialization
-- No chaining, no orchestration, no callbacks — deterministic single-job execution
-
-**Phase 8 — Guards (immutability enforcement): COMPLETE**
-
-- `Allocation::TEMPORAL_FIELDS` — `before_update` guard blocks AR mutations to `temporal_kind`, `starts_at`, `duration_seconds`, `timezone`, `rrule`, `valid_from`, `valid_to`, `projected_until`, `supersedes_allocation_id`, `schedulable_type`, `schedulable_id`. Metadata fields (`disposal_policy`, `attachment_version_ref`) remain updatable.
-- `Occurrence::COORDINATE_FIELDS` — `before_update` guard blocks AR mutations to `time_range`, `starts_at`, `ends_at`, `allocation_id`. Invalidation/state fields remain updatable.
-- Services bypass guards via `update_column`/`update_columns`/`update_all` (skip callbacks by design)
-- Monotonic projection enforced at service level (Projector's `already_projected?` check)
-
-**Phase 9 — Structural Tests: COMPLETE**
-
-- 58 examples, 0 failures across 6 spec files
-- `spec/services/whittaker_tech/aeon/projector_spec.rb` — temporal kind expansion (instant/span/schedule), idempotency, horizon enforcement (max window, valid_to cap, monotonic), upsert correctness (time_range consistency, projection_fingerprint)
-- `spec/services/whittaker_tech/aeon/forker_spec.rb` — fork future (close old, create successor, invalidate future, preserve past, inline projection), fork all (invalidates earliest occurrences), validation (pivot bounds, closed allocation, not found), disposal_policy inheritance
-- `spec/services/whittaker_tech/aeon/override_applier_spec.rb` — cancellation, rescheduling, constraints (unique, invalidated, no-action, not found)
-- `spec/models/whittaker_tech/aeon/guards_spec.rb` — all TEMPORAL_FIELDS blocked on Allocation, all COORDINATE_FIELDS blocked on Occurrence, metadata fields updatable
-- `spec/concerns/whittaker_tech/aeon/schedulable_spec.rb` — associations (has_one, has_many through), ensure_projected!, fork_future, fork_all, override_occurrence, error handling
-- `spec/jobs/whittaker_tech/aeon/projection_job_spec.rb` — delegation, idempotency, queue name
-- Factory: `spec/factories/whittaker_tech/aeon/allocations.rb` with `:instant`, `:span`, `:projected` traits
-- Support: `spec/support/schedulable_host.rb` (test host model with UUID PK, `schedule :time_slot`)
-
-**Phase 10 — Performance Pass: COMPLETE**
-
-- Projector `upsert!` batches `insert_all` into slices of 5,000 to prevent unbounded SQL statement size
-- Benchmark spec (`spec/performance/benchmark_spec.rb`) with 6 structural performance tests:
-  - Projection throughput: 366 daily occurrences in ~60ms (threshold: 1s)
-  - Batch scale: 73k occurrences across 100 allocations in ~8s (threshold: 30s)
-  - Range query: GiST-indexed `within_range` in ~15ms (threshold: 50ms)
-  - Fork invalidation: 366-occurrence fork in ~13ms (threshold: 1s)
-  - Idempotent re-projection: no-op in ~1ms (threshold: 200ms)
-  - EXPLAIN verification: confirms Bitmap Index Scan on GiST index
-- 64 total examples, 0 failures
-
-## Build Order (Strict)
-
-Follow this exact sequence. Never reverse it. Never parallelize prematurely.
-
-```
-Schema -> Constraints -> Models -> Services -> DSL -> Workers -> Guards -> Tests -> Docs
-```
-
-Phases:
-1. ~~Engine skeleton (mountable, API-only, UUID PKs, UTC everywhere)~~ **DONE**
-2. ~~Allocations migration~~ **DONE**
-3. ~~Occurrences migration~~ **DONE**
-4. ~~Overrides migration~~ **DONE**
-5. ~~Models (thin — enums, associations, scopes only)~~ **DONE**
-6. ~~Projector service~~ **DONE**
-7. ~~Forker service~~ **DONE**
-8. ~~OverrideApplier service~~ **DONE**
-9. ~~Schedulable DSL concern~~ **DONE**
-10. ~~Projection worker (ActiveJob/Sidekiq)~~ **DONE**
-11. ~~Guards (immutability enforcement)~~ **DONE**
-12. ~~Tests (structural, not micro)~~ **DONE**
-13. ~~Performance pass~~ **DONE**
-
 ## Environment
 
-- **Ruby:** 3.1.4 (via asdf, pinned in `.ruby-version`)
+- **Ruby:** 3.1.4 via asdf — managed by .ruby-version
 - **Rails:** 7.1.6 (pinned `~> 7.1.0` in gemspec)
-- **PostgreSQL:** 16 via Docker (see `../docker-compose.yml`)
-- **Redis:** 7 via Docker (available for later Sidekiq work)
-- **Test framework:** RSpec + FactoryBot
+- **PostgreSQL:** 16 via Docker at `127.0.0.1:5432` (user/pass: `postgres/postgres`) — see `../docker-compose.yml`
+- **Redis:** 7 via Docker (available for Sidekiq work)
+- **Databases:** `whittaker_tech_aeon_development`, `whittaker_tech_aeon_test`
+- **Dummy app:** `test/dummy/` (test harness for the engine)
 
-## Core Entities
+## Commands
 
-- **Allocation** — Immutable temporal law attached to a host via polymorphic `schedulable`. Never mutated; fork instead. Has `temporal_kind` enum: `instant`, `span`, `schedule`.
-- **Occurrence** — Materialized prediction projected from an Allocation. Coordinates are immutable once created. Only `state` and invalidation metadata may change.
-- **Override** — Surgical single-instance deviation layered on top of an Occurrence. One per occurrence. Never triggers re-projection.
+```bash
+# Setup
+asdf local ruby 3.1.4 # If ruby version differs from .ruby-version
+bundle install
+bundle exec rails db:create db:migrate # This is an engine migrations for a host app.
+
+# Tests (RSpec, not Minitest)
+bundle exec rspec                                                  # all tests (~70 examples)
+bundle exec rspec spec/services/whittaker_tech/aeon/projector_spec.rb  # single file
+bundle exec rspec spec/services/                                   # directory
+bundle exec rspec spec/performance/benchmark_spec.rb               # performance benchmarks
+
+# Lint
+bundle exec rubocop
+
+# Database
+bundle exec rails db:migrate
+bundle exec rails db:schema:dump           # regenerates test/dummy/db/structure.sql
+
+# Docs
+bundle exec yard doc                       # YARD API docs → doc/api/
+mkdocs serve                               # local MkDocs site
+```
+
+**Migration gotcha:** Rails Engine development migrations automatically inject the engine's `db/migrate` and `test/dummy/db/migrate` into the same request, so cloning the migration files into the dummy creates duplicate migrations.
+## Architecture
+
+### Core Entities (all tables in dedicated PG schema `wt_aeon`)
+
+- **Allocation** (`wt_aeon.allocations`) — Immutable temporal law attached to a host via polymorphic `schedulable` + `schedulable_label`. Has `temporal_kind` enum: `instant`, `span`, `schedule`. A host can have multiple named schedules (e.g. `schedule :time_slot`, `schedule :availability`), each distinguished by `schedulable_label`. Never mutated in place; fork forward instead.
+- **Occurrence** (`wt_aeon.occurrences`) — Materialized prediction projected from an Allocation. `tstzrange` `time_range` with GiST index. Coordinates (`time_range`, `starts_at`, `ends_at`) are immutable once created. Unique `(allocation_id, starts_at)` for idempotent upsert.
+- **Override** (`wt_aeon.overrides`) — Surgical single-instance deviation. One per occurrence (DB-enforced unique). Never triggers re-projection.
+
+### Services (stateless, in `app/services/whittaker_tech/aeon/`)
+
+- **Projector** — `Projector.call(allocation_id:, target_until:)` — Expands IceCube rrules → upserts Occurrence rows. Locks allocation (`FOR UPDATE NOWAIT`), batches `insert_all` in 5k slices, advances `projected_until` monotonically.
+- **Forker** — `Forker.call(allocation_id:, pivot:, **new_attrs)` — Closes old allocation (`valid_to = pivot`), creates successor with lineage, invalidates future occurrences via set-based SQL, projects successor inline.
+- **OverrideApplier** — `OverrideApplier.call(occurrence_id:, canceled:, replacement_time_range:)` — Creates override row. Never regenerates projections.
+- **Disposer** — Not yet implemented. Low-priority background purge of invalidated occurrences per retention policy.
+
+### Schedulable DSL (`app/models/concerns/whittaker_tech/aeon/schedulable.rb`)
+
+Host models include `WhittakerTech::Aeon::Schedulable` and declare `schedule :name`. The schedule name becomes the `schedulable_label` on the allocation, allowing multiple named schedules per host. Generates `has_one` (scoped by `valid_to: nil` and `schedulable_label`) / `has_many :through` associations and explicit verbs: `fork_future`, `fork_all`, `override_occurrence`, `ensure_projected!`. Hosts must never manipulate allocations directly.
+
+### Immutability Guards (two tiers)
+
+1. **ActiveRecord** `before_update` callbacks raise `ReadonlyAttributeError` on temporal/coordinate fields. Services bypass via `update_column`/`update_columns`/`update_all` (skip callbacks).
+2. **PG `BEFORE UPDATE` triggers** — Allocations have a two-tier guard: identity/temporal fields are hard-blocked; `valid_to`/`projected_until` are service-mutable via `SET LOCAL aeon.bypass_guard = 'true'` within a transaction. Occurrence coordinate fields are hard-blocked (no bypass).
+
+### Key Wiring Details
+
+- **`table_name_prefix`** is `"wt_aeon."`, defined on the `WhittakerTech::Aeon` module in `lib/whittaker_tech/aeon.rb`. An engine initializer uses `on_load(:active_record)` + `redefine_method` to override `isolate_namespace`'s own callback that would otherwise clobber it.
+- **Schema format is `:sql`** (`structure.sql`, not `schema.rb`) — required to capture PG schema, GiST indexes, partial indexes, tstzrange columns, triggers.
+- **UUID mandatory** for all PKs, FKs, and polymorphic IDs. No integer IDs anywhere. Host models using `Schedulable` must also use UUID primary keys.
+- **Foreign keys** use raw `ALTER TABLE ... ADD/DROP CONSTRAINT` in `reversible` migration blocks — Rails `add_foreign_key` cannot reverse schema-qualified tables.
+- **`has_many :through` cross-namespace** requires explicit `class_name: "WhittakerTech::Aeon::Occurrence"`.
+- **IceCube truncates to millisecond precision** while PG `timestamptz` preserves microseconds. The Forker accounts for this when `pivot == valid_from` (fork-all).
+- **ProjectionJob** (`app/jobs/`) — queue `aeon_projection`, serializes horizon as ISO 8601 string, delegates to `Projector.call`.
 
 ## Database
 
-- **Postgres required** (tstzrange, GiST indexes, partial indexes)
-- Dedicated PostgreSQL schema `wt_aeon` — tables are `wt_aeon.allocations`, `wt_aeon.occurrences`, `wt_aeon.overrides`
-- `table_name_prefix` defined as `def self.table_name_prefix` on `WhittakerTech::Aeon` module (in `lib/whittaker_tech/aeon.rb`, before engine load) — preempts `isolate_namespace`'s `unless mod.respond_to?` guard
-- **UUID mandatory for all IDs, PKs, and FKs** — `id` columns, all `_id` foreign keys, and polymorphic `schedulable_id` must be `uuid`. No integer IDs. No exceptions. Host models using `Schedulable` must also use UUID primary keys.
 - All timestamps are `timestamptz` in UTC
-- Key indexes: GiST on `wt_aeon.occurrences.time_range`, partial unique on active allocations, unique `(allocation_id, starts_at)` on occurrences
-- Schema format: `:sql` (`structure.sql`) — faithfully captures PG schema, GiST indexes, partial indexes, tstzrange columns
-- Foreign keys use raw `ALTER TABLE ... ADD/DROP CONSTRAINT` in `reversible` migration blocks (Rails `add_foreign_key` cannot reverse schema-qualified tables)
+- Key indexes: GiST on `time_range`, partial unique on active allocations `(schedulable_type, schedulable_id, schedulable_label) WHERE valid_to IS NULL`, unique `(allocation_id, starts_at)` on occurrences
+- `config/database.yml` uses `schema_search_path: "public,wt_aeon"`
+- Single consolidated migration: `db/migrate/20250601000001_create_aeon_schema_and_tables.rb`
 
 ## Architectural Invariants
 
@@ -158,75 +96,39 @@ Phases:
 ## Coding Conventions
 
 ### Prefer
-- Append-only writes
-- Idempotent operations
-- Set-based SQL (UPDATE ... WHERE)
-- Immutable records
-- Monotonic time progression
-- Thin models (enums, associations, scopes)
-- Services for all business logic
+- Append-only writes, idempotent operations, set-based SQL
+- Immutable records, monotonic time progression
+- Thin models (enums, associations, scopes only), services for all business logic
+- `reversible` blocks wrapping raw `execute` in migrations
 
 ### Avoid
 - ActiveRecord callbacks for business logic
-- Hidden mutations / magic
 - Ruby loops over datasets (use SQL)
-- Speculative abstractions / over-engineering
-- Infinite or unbounded projection
-- Domain logic inside the engine
-- Job chaining or workflow orchestration
+- Speculative abstractions, infinite/unbounded projection
+- Domain logic inside the engine, job chaining or workflow orchestration
 
-## Services
+## Testing
 
-- **Projector** — Expands IceCube rrules into Occurrence rows. Lock allocation, expand from `projected_until` to target horizon, upsert, advance frontier. Never delete, never rewrite.
-- **Forker** — Handles "change future" / "change all". Closes old allocation (`valid_to = pivot`), creates new allocation with lineage, invalidates future occurrences via set-based UPDATE, triggers projection for new allocation.
-- **OverrideApplier** — Locates occurrence, creates override row. Never regenerates projections.
-- **Disposer** — Low-priority background purge of invalidated occurrences per retention policy. Scaffold early, implement later.
-
-## Schedulable DSL
-
-Host models include `WhittakerTech::Aeon::Schedulable` and declare `schedule :name`. This generates `has_one` / `has_many :through` associations and exposes explicit verbs:
-- `fork_future(pivot:, ...)`
-- `fork_all(...)`
-- `override_occurrence(starts_at:, ...)`
-- `ensure_projected!(window:)`
-
-Hosts must **never** manipulate allocations directly. Blind temporal mutations are intercepted and forced through forks.
+- **RSpec + FactoryBot** — structural tests, not micro-tests
+- Factory: `spec/factories/whittaker_tech/aeon/allocations.rb` (traits: `:instant`, `:span`, `:projected`)
+- Test host model: `spec/support/schedulable_host.rb` (creates `schedulable_hosts` table with UUID PK, includes `schedule :time_slot`)
+- FactoryBot paths configured in `spec/rails_helper.rb` (uses `__dir__`-relative paths, not `Rails.root`)
+- When testing `before_update` guards on `belongs_to` fields, use `save!(validate: false)` to bypass AR validations while still firing callbacks
+- When DB-level immutability triggers are installed, specs that `update_columns` on guarded fields must wrap in a transaction with `SET LOCAL aeon.bypass_guard = 'true'`
 
 ## Anti-Scope (Do NOT Build)
 
-- UI adapters / FullCalendar serializers
-- Calendar rendering or display logic
-- Analytics / reporting
-- Event buses / domain callbacks
-- Audit engines / version diffs
-- Lifecycle management of host records
+- UI adapters / FullCalendar serializers / calendar rendering
+- Analytics / reporting / event buses / domain callbacks
+- Audit engines / version diffs / lifecycle management of host records
 - Domain validation (capacity, conflicts, business rules)
 
 These belong **above** Aeon. Protect the primitive.
 
-## Testing Strategy
-
-Write structural tests, not 400 micro-tests. Critical coverage:
-- Projection idempotency (run twice, no duplicates)
-- Fork correctness (past untouched, future invalidated)
-- Override precedence (override wins in query)
-- Horizon extension (monotonic forward only)
-- Range query performance (benchmark)
-
-## Configuration
-
-```ruby
-WhittakerTech::Aeon.configure do |c|
-  c.projection_buffer = 14.days
-  c.max_projection_window = 1.year
-  c.disposal_policy = :windowed
-  c.invalidated_retention_window = 60.days
-  c.queue_adapter = :sidekiq
-end
-```
-
-## Key Files Reference
+## Key Files
 
 - `ARCHITECTURE.md` — Full 4+1 architecture document
 - `EXECUTION_PLAN.md` — Phase-by-phase implementation roadmap
+- `lib/whittaker_tech/aeon.rb` — Module definition, Configuration class, `table_name_prefix`
+- `lib/whittaker_tech/aeon/engine.rb` — Engine class, initializers (UUID PKs, UTC, schema format, table prefix enforcement)
 - `../docker-compose.yml` — PostgreSQL 16 + Redis 7 services

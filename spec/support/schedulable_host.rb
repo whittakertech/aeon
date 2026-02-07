@@ -11,6 +11,15 @@ class SchedulableHost < ApplicationRecord
   schedule :time_slot
 end
 
+class MultiScheduleHost < ApplicationRecord
+  self.table_name = 'schedulable_hosts'
+
+  include WhittakerTech::Aeon::Schedulable
+
+  schedule :time_slot
+  schedule :availability
+end
+
 RSpec.configure do |config|
   config.before(:suite) do
     ActiveRecord::Base.connection.execute(<<~SQL.squish)
