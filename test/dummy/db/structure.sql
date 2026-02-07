@@ -1,4 +1,4 @@
-\restrict EyvuvrDeu1emX8ZX68xGi9WGSEolZKnnITad7lO0flEbzR1JbrrHAsT61Y7RMOP
+\restrict rh2XwmtjUczJHdAzx5yDhwa6t57EP9KJe1sJ2HNEmKg8ZNyxWWfZmxX7oU4gpGN
 
 -- Dumped from database version 16.11 (Debian 16.11-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -53,47 +53,11 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
--- Name: events; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.events (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying,
-    created_at timestamp with time zone,
-    updated_at timestamp with time zone
-);
-
-
---
--- Name: lessons; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.lessons (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    title character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.schema_migrations (
     version character varying NOT NULL
-);
-
-
---
--- Name: test_hosts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.test_hosts (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -165,35 +129,11 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
--- Name: events events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.events
-    ADD CONSTRAINT events_pkey PRIMARY KEY (id);
-
-
---
--- Name: lessons lessons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.lessons
-    ADD CONSTRAINT lessons_pkey PRIMARY KEY (id);
-
-
---
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
-
-
---
--- Name: test_hosts test_hosts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_hosts
-    ADD CONSTRAINT test_hosts_pkey PRIMARY KEY (id);
 
 
 --
@@ -298,14 +238,11 @@ ALTER TABLE ONLY wt_aeon.overrides
 -- PostgreSQL database dump complete
 --
 
-\unrestrict EyvuvrDeu1emX8ZX68xGi9WGSEolZKnnITad7lO0flEbzR1JbrrHAsT61Y7RMOP
+\unrestrict rh2XwmtjUczJHdAzx5yDhwa6t57EP9KJe1sJ2HNEmKg8ZNyxWWfZmxX7oU4gpGN
 
 SET search_path TO public,wt_aeon;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20250601000005'),
-('20250601000004'),
-('20250601000003'),
 ('20250601000002'),
 ('20250601000001');
 
