@@ -27,7 +27,10 @@ RSpec.describe WhittakerTech::Aeon::Schedulable do
     end
 
     it 'returns nil when no active allocation exists' do
-      alloc.update_columns(valid_to: now)
+      WhittakerTech::Aeon::Allocation.transaction do
+        WhittakerTech::Aeon::Allocation.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
+        alloc.update_columns(valid_to: now)
+      end
       host.reload
       expect(host.time_slot).to be_nil
     end

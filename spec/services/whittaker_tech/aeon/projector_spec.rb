@@ -82,7 +82,10 @@ RSpec.describe WhittakerTech::Aeon::Projector do
     it 'caps projection at valid_to for closed allocations' do
       close_at = now + 3.days
       alloc = create(:allocation, starts_at: start, valid_from: start, projected_until: start)
-      alloc.update_columns(valid_to: close_at)
+      WhittakerTech::Aeon::Allocation.transaction do
+        WhittakerTech::Aeon::Allocation.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
+        alloc.update_columns(valid_to: close_at)
+      end
 
       described_class.call(allocation_id: alloc.id, target_until: now + 30.days)
       alloc.reload

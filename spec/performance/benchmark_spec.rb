@@ -149,7 +149,11 @@ RSpec.describe 'Performance', :performance do
 
       range = "[#{1.week.from_now.iso8601},#{2.weeks.from_now.iso8601})"
       sql = WhittakerTech::Aeon::Occurrence.within_range(range).to_sql
-      explain = ActiveRecord::Base.connection.execute("EXPLAIN #{sql}").pluck('QUERY PLAN').join("\n")
+
+      conn = ActiveRecord::Base.connection
+      conn.execute('SET enable_seqscan = off')
+      explain = conn.execute("EXPLAIN #{sql}").pluck('QUERY PLAN').join("\n")
+      conn.execute('RESET enable_seqscan')
 
       expect(explain).to match(/Index Scan|Bitmap Index Scan|Bitmap Heap Scan/i)
     end

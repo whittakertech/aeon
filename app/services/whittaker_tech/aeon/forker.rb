@@ -41,6 +41,7 @@ module WhittakerTech
       # @return [Allocation] the successor allocation
       def call
         Allocation.transaction do
+          Allocation.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
           old_allocation = lock_allocation!
           validate_pivot!(old_allocation)
           close_allocation!(old_allocation)

@@ -39,6 +39,7 @@ module WhittakerTech
       # @return [void]
       def call
         Allocation.transaction do
+          Allocation.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
           allocation = lock_allocation!
           return if already_projected?(allocation)
 

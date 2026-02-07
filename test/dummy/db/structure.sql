@@ -1,4 +1,4 @@
-\restrict rh2XwmtjUczJHdAzx5yDhwa6t57EP9KJe1sJ2HNEmKg8ZNyxWWfZmxX7oU4gpGN
+\restrict 6ASd9T7HCOnysxcldmbfsY6kAAe1fhZmmgZ8zMMQRThJtVz4jlGzvQeQC9pSqe1
 
 -- Dumped from database version 16.11 (Debian 16.11-1.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -34,6 +34,62 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 --
 
 CREATE SCHEMA wt_aeon;
+
+
+--
+-- Name: guard_allocation_temporal_fields(); Type: FUNCTION; Schema: wt_aeon; Owner: -
+--
+
+CREATE FUNCTION wt_aeon.guard_allocation_temporal_fields() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF (OLD.temporal_kind IS DISTINCT FROM NEW.temporal_kind) OR
+     (OLD.starts_at IS DISTINCT FROM NEW.starts_at) OR
+     (OLD.duration_seconds IS DISTINCT FROM NEW.duration_seconds) OR
+     (OLD.timezone IS DISTINCT FROM NEW.timezone) OR
+     (OLD.rrule IS DISTINCT FROM NEW.rrule) OR
+     (OLD.valid_from IS DISTINCT FROM NEW.valid_from) OR
+     (OLD.supersedes_allocation_id IS DISTINCT FROM NEW.supersedes_allocation_id) OR
+     (OLD.schedulable_type IS DISTINCT FROM NEW.schedulable_type) OR
+     (OLD.schedulable_id IS DISTINCT FROM NEW.schedulable_id) THEN
+    RAISE EXCEPTION 'cannot mutate temporal fields on a persisted Allocation'
+      USING ERRCODE = 'raise_exception';
+  END IF;
+
+  IF current_setting('aeon.bypass_guard', true) = 'true' THEN
+    RETURN NEW;
+  END IF;
+
+  IF (OLD.valid_to IS DISTINCT FROM NEW.valid_to) OR
+     (OLD.projected_until IS DISTINCT FROM NEW.projected_until) THEN
+    RAISE EXCEPTION 'cannot mutate temporal fields on a persisted Allocation'
+      USING ERRCODE = 'raise_exception';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: guard_occurrence_coordinates(); Type: FUNCTION; Schema: wt_aeon; Owner: -
+--
+
+CREATE FUNCTION wt_aeon.guard_occurrence_coordinates() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF (OLD.time_range IS DISTINCT FROM NEW.time_range) OR
+     (OLD.starts_at IS DISTINCT FROM NEW.starts_at) OR
+     (OLD.ends_at IS DISTINCT FROM NEW.ends_at) OR
+     (OLD.allocation_id IS DISTINCT FROM NEW.allocation_id) THEN
+    RAISE EXCEPTION 'cannot mutate coordinate fields on a persisted Occurrence'
+      USING ERRCODE = 'raise_exception';
+  END IF;
+  RETURN NEW;
+END;
+$$;
 
 
 SET default_tablespace = '';
@@ -80,8 +136,8 @@ CREATE TABLE wt_aeon.allocations (
     supersedes_allocation_id uuid,
     disposal_policy character varying,
     attachment_version_ref character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    created_at timestamp(6) with time zone NOT NULL,
+    updated_at timestamp(6) with time zone NOT NULL
 );
 
 
@@ -101,8 +157,8 @@ CREATE TABLE wt_aeon.occurrences (
     invalidated_at timestamp with time zone,
     invalidated_by_allocation_id uuid,
     purged_at timestamp with time zone,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    created_at timestamp(6) with time zone NOT NULL,
+    updated_at timestamp(6) with time zone NOT NULL
 );
 
 
@@ -115,8 +171,8 @@ CREATE TABLE wt_aeon.overrides (
     occurrence_id uuid NOT NULL,
     replacement_time_range tstzrange,
     canceled boolean DEFAULT false NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    created_at timestamp(6) with time zone NOT NULL,
+    updated_at timestamp(6) with time zone NOT NULL
 );
 
 
@@ -203,6 +259,20 @@ CREATE UNIQUE INDEX idx_aeon_overrides_unique_per_occurrence ON wt_aeon.override
 
 
 --
+-- Name: allocations guard_allocation_temporal_fields; Type: TRIGGER; Schema: wt_aeon; Owner: -
+--
+
+CREATE TRIGGER guard_allocation_temporal_fields BEFORE UPDATE ON wt_aeon.allocations FOR EACH ROW EXECUTE FUNCTION wt_aeon.guard_allocation_temporal_fields();
+
+
+--
+-- Name: occurrences guard_occurrence_coordinates; Type: TRIGGER; Schema: wt_aeon; Owner: -
+--
+
+CREATE TRIGGER guard_occurrence_coordinates BEFORE UPDATE ON wt_aeon.occurrences FOR EACH ROW EXECUTE FUNCTION wt_aeon.guard_occurrence_coordinates();
+
+
+--
 -- Name: allocations fk_aeon_allocations_supersedes; Type: FK CONSTRAINT; Schema: wt_aeon; Owner: -
 --
 
@@ -238,11 +308,10 @@ ALTER TABLE ONLY wt_aeon.overrides
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rh2XwmtjUczJHdAzx5yDhwa6t57EP9KJe1sJ2HNEmKg8ZNyxWWfZmxX7oU4gpGN
+\unrestrict 6ASd9T7HCOnysxcldmbfsY6kAAe1fhZmmgZ8zMMQRThJtVz4jlGzvQeQC9pSqe1
 
 SET search_path TO public,wt_aeon;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('20250601000002'),
 ('20250601000001');
 

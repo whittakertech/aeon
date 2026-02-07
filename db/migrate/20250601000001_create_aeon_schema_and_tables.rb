@@ -1,5 +1,17 @@
-class CreateAeonTables < ActiveRecord::Migration[7.1]
+# frozen_string_literal: true
+
+class CreateAeonSchemaAndTables < ActiveRecord::Migration[7.1]
   def change
+    reversible do |dir|
+      dir.up do
+        enable_extension "pgcrypto" unless extension_enabled?("pgcrypto")
+        execute "CREATE SCHEMA IF NOT EXISTS #{schema_name}"
+      end
+      dir.down do
+        execute "DROP SCHEMA IF EXISTS #{schema_name} CASCADE"
+      end
+    end
+
     # ── Allocations ──────────────────────────────────────────────────────
     create_table table("allocations"), id: :uuid do |t|
       t.string   :schedulable_type,            null: false
@@ -161,6 +173,84 @@ class CreateAeonTables < ActiveRecord::Migration[7.1]
           ALTER TABLE #{table("overrides")}
             DROP CONSTRAINT IF EXISTS fk_aeon_overrides_occurrence;
         SQL
+      end
+    end
+
+    # ── Immutability triggers ────────────────────────────────────────────
+    reversible do |dir|
+      dir.up do
+        # Hard block on occurrence coordinate fields (no bypass mechanism)
+        execute <<~SQL
+          CREATE OR REPLACE FUNCTION #{schema_name}.guard_occurrence_coordinates()
+          RETURNS trigger AS $$
+          BEGIN
+            IF (OLD.time_range IS DISTINCT FROM NEW.time_range) OR
+               (OLD.starts_at IS DISTINCT FROM NEW.starts_at) OR
+               (OLD.ends_at IS DISTINCT FROM NEW.ends_at) OR
+               (OLD.allocation_id IS DISTINCT FROM NEW.allocation_id) THEN
+              RAISE EXCEPTION 'cannot mutate coordinate fields on a persisted Occurrence'
+                USING ERRCODE = 'raise_exception';
+            END IF;
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+        SQL
+
+        execute <<~SQL
+          CREATE TRIGGER guard_occurrence_coordinates
+            BEFORE UPDATE ON #{table("occurrences")}
+            FOR EACH ROW EXECUTE FUNCTION #{schema_name}.guard_occurrence_coordinates();
+        SQL
+
+        # Two-tier allocation guard:
+        #   Tier 1 (hard-blocked): identity/temporal fields — no bypass
+        #   Tier 2 (service-mutable): valid_to, projected_until — bypass via session variable
+        execute <<~SQL
+          CREATE OR REPLACE FUNCTION #{schema_name}.guard_allocation_temporal_fields()
+          RETURNS trigger AS $$
+          BEGIN
+            -- Tier 1: hard-blocked fields (no bypass)
+            IF (OLD.temporal_kind IS DISTINCT FROM NEW.temporal_kind) OR
+               (OLD.starts_at IS DISTINCT FROM NEW.starts_at) OR
+               (OLD.duration_seconds IS DISTINCT FROM NEW.duration_seconds) OR
+               (OLD.timezone IS DISTINCT FROM NEW.timezone) OR
+               (OLD.rrule IS DISTINCT FROM NEW.rrule) OR
+               (OLD.valid_from IS DISTINCT FROM NEW.valid_from) OR
+               (OLD.supersedes_allocation_id IS DISTINCT FROM NEW.supersedes_allocation_id) OR
+               (OLD.schedulable_type IS DISTINCT FROM NEW.schedulable_type) OR
+               (OLD.schedulable_id IS DISTINCT FROM NEW.schedulable_id) THEN
+              RAISE EXCEPTION 'cannot mutate temporal fields on a persisted Allocation'
+                USING ERRCODE = 'raise_exception';
+            END IF;
+
+            -- Tier 2: service-mutable fields (bypass via session variable)
+            IF current_setting('aeon.bypass_guard', true) = 'true' THEN
+              RETURN NEW;
+            END IF;
+
+            IF (OLD.valid_to IS DISTINCT FROM NEW.valid_to) OR
+               (OLD.projected_until IS DISTINCT FROM NEW.projected_until) THEN
+              RAISE EXCEPTION 'cannot mutate temporal fields on a persisted Allocation'
+                USING ERRCODE = 'raise_exception';
+            END IF;
+
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+        SQL
+
+        execute <<~SQL
+          CREATE TRIGGER guard_allocation_temporal_fields
+            BEFORE UPDATE ON #{table("allocations")}
+            FOR EACH ROW EXECUTE FUNCTION #{schema_name}.guard_allocation_temporal_fields();
+        SQL
+      end
+
+      dir.down do
+        execute "DROP TRIGGER IF EXISTS guard_occurrence_coordinates ON #{table("occurrences")}"
+        execute "DROP FUNCTION IF EXISTS #{schema_name}.guard_occurrence_coordinates()"
+        execute "DROP TRIGGER IF EXISTS guard_allocation_temporal_fields ON #{table("allocations")}"
+        execute "DROP FUNCTION IF EXISTS #{schema_name}.guard_allocation_temporal_fields()"
       end
     end
   end
