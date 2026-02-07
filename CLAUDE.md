@@ -17,7 +17,14 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 - RSpec + FactoryBot configured
 - Dummy app at `test/dummy/` with explicit `config.root`
 
-**Next: Phase 1 — Database Physics (Migrations)**
+**Phase 1 — Database Physics (Migrations): COMPLETE**
+
+- `pgcrypto` extension enabled for UUID generation
+- `whittaker_tech_aeon_allocations` — polymorphic schedulable, temporal_kind enum, rrule jsonb, fork lineage via `supersedes_allocation_id`, partial unique index enforcing one active allocation per schedulable
+- `whittaker_tech_aeon_occurrences` — tstzrange `time_range` with GiST index, unique `(allocation_id, starts_at)` for idempotent upsert, partial index on active rows, FK to allocations for both `allocation_id` and `invalidated_by_allocation_id`
+- `whittaker_tech_aeon_overrides` — unique `occurrence_id` constraint (one override per occurrence), `replacement_time_range` tstzrange, `canceled` boolean
+
+**Next: Phase 2 — Models (thin — enums, associations, scopes only)**
 
 ## Build Order (Strict)
 
@@ -29,9 +36,9 @@ Schema -> Constraints -> Models -> Services -> DSL -> Workers -> Guards -> Tests
 
 Phases:
 1. ~~Engine skeleton (mountable, API-only, UUID PKs, UTC everywhere)~~ **DONE**
-2. Allocations migration
-3. Occurrences migration
-4. Overrides migration
+2. ~~Allocations migration~~ **DONE**
+3. ~~Occurrences migration~~ **DONE**
+4. ~~Overrides migration~~ **DONE**
 5. Models (thin — enums, associations, scopes only)
 6. Projector service
 7. Forker service
