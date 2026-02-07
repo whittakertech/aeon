@@ -19,6 +19,12 @@ module WhittakerTech
       initializer "aeon.schema_format" do |app|
         app.config.active_record.schema_format = :sql
       end
+
+      initializer "aeon.table_name_prefix", after: "aeon.schema_format" do
+        ActiveSupport.on_load(:active_record) do
+          WhittakerTech::Aeon.singleton_class.redefine_method(:table_name_prefix) { "wt_aeon." }
+        end
+      end
     end
   end
 end

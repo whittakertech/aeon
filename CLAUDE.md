@@ -26,7 +26,14 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 - `wt_aeon.occurrences` — tstzrange `time_range` with GiST index, unique `(allocation_id, starts_at)` for idempotent upsert, partial index on active rows, FK to allocations for both `allocation_id` and `invalidated_by_allocation_id`
 - `wt_aeon.overrides` — unique `occurrence_id` constraint (one override per occurrence), `replacement_time_range` tstzrange, `canceled` boolean
 
-**Next: Phase 2 — Models (thin — enums, associations, scopes only)**
+**Phase 2 — Models (thin): COMPLETE**
+
+- `Allocation` — `temporal_kind` enum (`instant`, `span`, `schedule`), polymorphic `schedulable`, fork lineage (`superseded_allocation` / `superseding_allocation`), `has_many :occurrences`, `has_many :invalidated_occurrences`
+- `Occurrence` — `state` enum (`active`), `belongs_to :allocation` / `:invalidated_by_allocation`, `has_one :override`, scopes: `active` (matches partial index), `invalidated`, `within_range` (GiST `&&` operator)
+- `Override` — `belongs_to :occurrence` (no validations — DB enforces constraints)
+- `table_name_prefix` defined on `WhittakerTech::Aeon` module in `lib/whittaker_tech/aeon.rb` before engine load, preempting `isolate_namespace` override
+
+**Next: Phase 3 — Projector service**
 
 ## Build Order (Strict)
 
@@ -41,7 +48,7 @@ Phases:
 2. ~~Allocations migration~~ **DONE**
 3. ~~Occurrences migration~~ **DONE**
 4. ~~Overrides migration~~ **DONE**
-5. Models (thin — enums, associations, scopes only)
+5. ~~Models (thin — enums, associations, scopes only)~~ **DONE**
 6. Projector service
 7. Forker service
 8. OverrideApplier service
@@ -69,7 +76,7 @@ Phases:
 
 - **Postgres required** (tstzrange, GiST indexes, partial indexes)
 - Dedicated PostgreSQL schema `wt_aeon` — tables are `wt_aeon.allocations`, `wt_aeon.occurrences`, `wt_aeon.overrides`
-- `ApplicationRecord` sets `self.table_name_prefix = "wt_aeon."` to override the `isolate_namespace`-derived prefix
+- `table_name_prefix` defined as `def self.table_name_prefix` on `WhittakerTech::Aeon` module (in `lib/whittaker_tech/aeon.rb`, before engine load) — preempts `isolate_namespace`'s `unless mod.respond_to?` guard
 - **UUID mandatory for all IDs, PKs, and FKs** — `id` columns, all `_id` foreign keys, and polymorphic `schedulable_id` must be `uuid`. No integer IDs. No exceptions. Host models using `Schedulable` must also use UUID primary keys.
 - All timestamps are `timestamptz` in UTC
 - Key indexes: GiST on `wt_aeon.occurrences.time_range`, partial unique on active allocations, unique `(allocation_id, starts_at)` on occurrences

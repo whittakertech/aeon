@@ -22,4 +22,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "rails", "~> 7.1.0"
   spec.add_dependency "pg", ">= 1.1"
+  spec.add_dependency "ice_cube", "~> 0.16"
 end
