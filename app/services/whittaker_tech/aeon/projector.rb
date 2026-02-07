@@ -96,8 +96,12 @@ module WhittakerTech
         Digest::SHA256.hexdigest(payload)
       end
 
+      UPSERT_BATCH_SIZE = 5_000
+
       def upsert!(rows)
-        Occurrence.insert_all(rows, unique_by: [:allocation_id, :starts_at])
+        rows.each_slice(UPSERT_BATCH_SIZE) do |batch|
+          Occurrence.insert_all(batch, unique_by: [:allocation_id, :starts_at])
+        end
       end
 
       def advance_frontier!(allocation)

@@ -85,7 +85,17 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 - Factory: `spec/factories/whittaker_tech/aeon/allocations.rb` with `:instant`, `:span`, `:projected` traits
 - Support: `spec/support/schedulable_host.rb` (test host model with UUID PK, `schedule :time_slot`)
 
-**Next: Phase 10 — Performance pass**
+**Phase 10 — Performance Pass: COMPLETE**
+
+- Projector `upsert!` batches `insert_all` into slices of 5,000 to prevent unbounded SQL statement size
+- Benchmark spec (`spec/performance/benchmark_spec.rb`) with 6 structural performance tests:
+  - Projection throughput: 366 daily occurrences in ~60ms (threshold: 1s)
+  - Batch scale: 73k occurrences across 100 allocations in ~8s (threshold: 30s)
+  - Range query: GiST-indexed `within_range` in ~15ms (threshold: 50ms)
+  - Fork invalidation: 366-occurrence fork in ~13ms (threshold: 1s)
+  - Idempotent re-projection: no-op in ~1ms (threshold: 200ms)
+  - EXPLAIN verification: confirms Bitmap Index Scan on GiST index
+- 64 total examples, 0 failures
 
 ## Build Order (Strict)
 
@@ -108,7 +118,7 @@ Phases:
 10. ~~Projection worker (ActiveJob/Sidekiq)~~ **DONE**
 11. ~~Guards (immutability enforcement)~~ **DONE**
 12. ~~Tests (structural, not micro)~~ **DONE**
-13. Performance pass
+13. ~~Performance pass~~ **DONE**
 
 ## Environment
 
