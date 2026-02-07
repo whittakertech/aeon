@@ -55,11 +55,12 @@ mkdocs serve                               # local MkDocs site
 - **Projector** — `Projector.call(allocation_id:, target_until:)` — Expands IceCube rrules → upserts Occurrence rows. Locks allocation (`FOR UPDATE NOWAIT`), batches `insert_all` in 5k slices, advances `projected_until` monotonically.
 - **Forker** — `Forker.call(allocation_id:, pivot:, **new_attrs)` — Closes old allocation (`valid_to = pivot`), creates successor with lineage, invalidates future occurrences via set-based SQL, projects successor inline.
 - **OverrideApplier** — `OverrideApplier.call(occurrence_id:, canceled:, replacement_time_range:)` — Creates override row. Never regenerates projections.
+- **Resolver** — `Resolver.between(schedulable:, range:, label:)` — Canonical read path. Merges allocations, occurrences, overrides, and invalidations into a sorted array of frozen `ResolvedOccurrence` value objects. Never triggers projection. Known v1 limitation: a replacement override that shifts an occurrence INTO the window (whose base was outside) will not be caught.
 - **Disposer** — Not yet implemented. Low-priority background purge of invalidated occurrences per retention policy.
 
 ### Schedulable DSL (`app/models/concerns/whittaker_tech/aeon/schedulable.rb`)
 
-Host models include `WhittakerTech::Aeon::Schedulable` and declare `schedule :name`. The schedule name becomes the `schedulable_label` on the allocation, allowing multiple named schedules per host. Generates `has_one` (scoped by `valid_to: nil` and `schedulable_label`) / `has_many :through` associations and explicit verbs: `fork_future`, `fork_all`, `override_occurrence`, `ensure_projected!`. Hosts must never manipulate allocations directly.
+Host models include `WhittakerTech::Aeon::Schedulable` and declare `schedule :name`. The schedule name becomes the `schedulable_label` on the allocation, allowing multiple named schedules per host. Generates `has_one` (scoped by `valid_to: nil` and `schedulable_label`) / `has_many :through` associations and explicit verbs: `fork_future`, `fork_all`, `override_occurrence`, `ensure_projected!`, `resolve_<name>`. Hosts must never manipulate allocations directly.
 
 ### Immutability Guards (two tiers)
 

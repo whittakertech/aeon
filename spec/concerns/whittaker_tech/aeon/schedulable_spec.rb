@@ -107,6 +107,19 @@ RSpec.describe WhittakerTech::Aeon::Schedulable do
     end
   end
 
+  describe 'resolve_time_slot' do
+    before { host.ensure_projected! }
+
+    it 'returns resolved occurrences for the named schedule' do
+      range = (now - 1.day)..(now + 1.day)
+      results = host.resolve_time_slot(range: range)
+
+      expect(results).to all(be_a(WhittakerTech::Aeon::ResolvedOccurrence))
+      expect(results).to be_frozen
+      expect(results.map(&:schedulable_label).uniq).to eq(['time_slot'])
+    end
+  end
+
   describe 'error handling' do
     it 'raises when no active allocation exists' do
       empty_host = SchedulableHost.create!(name: 'no-schedule')

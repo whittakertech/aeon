@@ -108,6 +108,16 @@ module WhittakerTech
             target = Time.current + window
             Projector.call(allocation_id: alloc.id, target_until: target)
           end
+
+          # @!method resolve_<name>(range:)
+          #   Resolves the named schedule within the given time window,
+          #   returning frozen {ResolvedOccurrence} value objects with
+          #   overrides already applied.
+          #   @param range [Range<Time>] the query window
+          #   @return [Array<ResolvedOccurrence>]
+          define_method(:"resolve_#{name}") do |range:|
+            Resolver.between(schedulable: self, range: range, label: name.to_s)
+          end
         end
       end
     end
