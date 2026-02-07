@@ -1,7 +1,19 @@
 module WhittakerTech
   module Aeon
     class Occurrence < ApplicationRecord
+      COORDINATE_FIELDS = %w[
+        time_range starts_at ends_at allocation_id
+      ].freeze
+
       enum :state, { active: 0 }
+
+      before_update do
+        violated = changed & COORDINATE_FIELDS
+        if violated.any?
+          raise ActiveRecord::ReadonlyAttributeError,
+                "cannot mutate coordinates on a persisted Occurrence: #{violated.join(', ')}"
+        end
+      end
 
       belongs_to :allocation, inverse_of: :occurrences
 

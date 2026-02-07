@@ -66,7 +66,14 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 - Serializes horizon as ISO 8601 string for safe job serialization
 - No chaining, no orchestration, no callbacks — deterministic single-job execution
 
-**Next: Phase 8 — Guards (immutability enforcement)**
+**Phase 8 — Guards (immutability enforcement): COMPLETE**
+
+- `Allocation::TEMPORAL_FIELDS` — `before_update` guard blocks AR mutations to `temporal_kind`, `starts_at`, `duration_seconds`, `timezone`, `rrule`, `valid_from`, `valid_to`, `projected_until`, `supersedes_allocation_id`, `schedulable_type`, `schedulable_id`. Metadata fields (`disposal_policy`, `attachment_version_ref`) remain updatable.
+- `Occurrence::COORDINATE_FIELDS` — `before_update` guard blocks AR mutations to `time_range`, `starts_at`, `ends_at`, `allocation_id`. Invalidation/state fields remain updatable.
+- Services bypass guards via `update_column`/`update_columns`/`update_all` (skip callbacks by design)
+- Monotonic projection enforced at service level (Projector's `already_projected?` check)
+
+**Next: Phase 9 — Tests (structural)**
 
 ## Build Order (Strict)
 
@@ -87,7 +94,7 @@ Phases:
 8. ~~OverrideApplier service~~ **DONE**
 9. ~~Schedulable DSL concern~~ **DONE**
 10. ~~Projection worker (ActiveJob/Sidekiq)~~ **DONE**
-11. Guards (immutability enforcement)
+11. ~~Guards (immutability enforcement)~~ **DONE**
 12. Tests (structural, not micro)
 13. Performance pass
 
