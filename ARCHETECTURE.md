@@ -110,8 +110,8 @@ Time should feel inevitable inside **Aeon**.
 
 Occurrences are materialized artifacts. Retention is policy-driven.
 
-- **Global default**: `Aeon.config.occurrence_retention_policy`
-- **Per-allocation override**: `Allocation#occurrence_retention_policy`
+- **Global default**: `Aeon.config.disposal_policy`
+- **Per-allocation override**: `Allocation#disposal_policy`
 
 Example policy modes (minimal set; extensible):
 - `:ephemeral` — delete/mark-for-purge aggressively (fast cache)
@@ -175,7 +175,7 @@ Key columns:
 - `valid_from` (timestamptz, not null), `valid_to` (timestamptz, nullable)
 - `projected_until` (timestamptz, not null)
 - `supersedes_allocation_id` (uuid FK → allocations, nullable) — lineage
-- `occurrence_retention_policy` (string, nullable) — overrides global
+- `disposal_policy` (string, nullable) — overrides global
 - `attachment_version_ref` (string, nullable; opaque)
 
 > **All IDs, PKs, and FKs are UUID.** No exceptions.
@@ -341,7 +341,7 @@ WhittakerTech::Aeon.configure do |c|
   c.max_projection_window = 1.year
 
   # retention
-  c.occurrence_retention_policy = :windowed
+  c.disposal_policy = :windowed
   c.invalidated_retention_window = 60.days
 
   # background execution

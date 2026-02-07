@@ -52,7 +52,7 @@ module WhittakerTech
           duration_seconds: @new_attrs.fetch(:duration_seconds, old_allocation.duration_seconds),
           timezone: @new_attrs.fetch(:timezone, old_allocation.timezone),
           rrule: @new_attrs.fetch(:rrule, old_allocation.rrule),
-          occurrence_retention_policy: @new_attrs.fetch(:occurrence_retention_policy, old_allocation.occurrence_retention_policy),
+          disposal_policy: @new_attrs.fetch(:disposal_policy, old_allocation.disposal_policy),
           valid_from: @pivot,
           valid_to: nil,
           projected_until: @pivot,

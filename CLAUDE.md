@@ -190,7 +190,7 @@ Write structural tests, not 400 micro-tests. Critical coverage:
 WhittakerTech::Aeon.configure do |c|
   c.projection_buffer = 14.days
   c.max_projection_window = 1.year
-  c.occurrence_retention_policy = :windowed
+  c.disposal_policy = :windowed
   c.invalidated_retention_window = 60.days
   c.queue_adapter = :sidekiq
 end

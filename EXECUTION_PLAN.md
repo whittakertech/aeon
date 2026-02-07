@@ -100,7 +100,7 @@ Create table: **`wt_aeon.allocations`**
 
 - supersedes_allocation_id (uuid FK → allocations, nullable)
 
-- occurrence_retention_policy (string, nullable)
+- disposal_policy (string, nullable)
 - attachment_version_ref (string, nullable)
 
 ### Indexes

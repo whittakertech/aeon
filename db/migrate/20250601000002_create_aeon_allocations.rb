@@ -12,7 +12,7 @@ class CreateAeonAllocations < ActiveRecord::Migration[7.1]
       t.timestamptz :valid_to
       t.timestamptz :projected_until,          null: false
       t.uuid     :supersedes_allocation_id
-      t.string   :occurrence_retention_policy
+      t.string   :disposal_policy
       t.string   :attachment_version_ref
 
       t.timestamps
