@@ -49,9 +49,10 @@ rails plugin new whittaker_tech-aeon \
 ```
 
 ### Configure Immediately
-- UUID primary keys
+- UUID primary keys mandatory for all tables (IDs, PKs, FKs — no integer IDs)
 - UTC enforced everywhere
 - Rails 7.1+ / 8 ready migrations
+- Schema format: `:sql` (`structure.sql`)
 - FactoryBot + RSpec (or your house style)
 - Rubocop + StandardRB (optional but recommended)
 
@@ -66,63 +67,72 @@ Engine boots cleanly inside dummy app.
 
 > Do not write services yet.
 
+All tables live in a dedicated PostgreSQL schema: **`wt_aeon`**.
+
+**All IDs, PKs, and FKs are UUID (`gen_random_uuid()` via `pgcrypto`).** No integer IDs. No exceptions. Host models using `Schedulable` must also use UUID primary keys.
+
+Schema format is `:sql` (`structure.sql`) — `schema.rb` cannot faithfully represent PG schemas, GiST indexes, partial indexes, or tstzrange columns.
+
+Foreign keys use raw `ALTER TABLE ... ADD/DROP CONSTRAINT` in `reversible` migration blocks (Rails `add_foreign_key`/`remove_foreign_key` cannot reverse schema-qualified tables).
+
+## Migration 0 — pgcrypto + Schema
+
+- Enable `pgcrypto` extension (UUID generation)
+- `CREATE SCHEMA IF NOT EXISTS wt_aeon` (reversible: `DROP SCHEMA IF EXISTS wt_aeon CASCADE`)
+
 ## Migration 1 — Allocations
 
-Create table:
-
-**allocations**
-- id: uuid
+Create table: **`wt_aeon.allocations`**
+- id (uuid, PK)
 - schedulable_type (string, not null)
-- schedulable_id (uuid/bigint, not null)
-- temporal_kind (int/enum, not null)
+- schedulable_id (uuid, not null)
+- temporal_kind (integer enum, not null)
 
 - starts_at (timestamptz, not null)
 - duration_seconds (integer, nullable)
 - timezone (string, nullable)
-- rrule (text/jsonb, nullable)
+- rrule (jsonb, nullable)
 
 - valid_from (timestamptz, not null)
 - valid_to (timestamptz, nullable)
 
 - projected_until (timestamptz, not null)
 
-- supersedes_allocation_id (uuid, nullable)
+- supersedes_allocation_id (uuid FK → allocations, nullable)
 
-- occurrence_retention_policy (string/enum, nullable)
+- occurrence_retention_policy (string, nullable)
 - attachment_version_ref (string, nullable)
 
 ### Indexes
 ```
-index_allocations_on_schedulable
+idx_aeon_allocations_on_schedulable
 (schedulable_type, schedulable_id)
 
 partial unique index:
-one active allocation per schedulable
-WHERE valid_to IS NULL
+idx_aeon_allocations_active_per_schedulable
+(schedulable_type, schedulable_id) WHERE valid_to IS NULL
 ```
-
-(Use partial index if Postgres ≥ 11 — which you absolutely should.)
 
 ---
 
 ## Migration 2 — Occurrences
 
-**occurrences**
-- id: uuid
-- allocation_id (uuid FK, NOT NULL)
+Create table: **`wt_aeon.occurrences`**
+- id (uuid, PK)
+- allocation_id (uuid FK → allocations, not null)
 
-- time_range (tstzrange, NOT NULL)
+- time_range (tstzrange, not null)
 
-- starts_at (timestamptz, NOT NULL)
-- ends_at (timestamptz, NOT NULL)
+- starts_at (timestamptz, not null)
+- ends_at (timestamptz, not null)
 
-- state (int enum, default: active)
+- state (integer enum, not null, default: active)
 
 - projection_fingerprint (string)
 - projected_at (timestamptz)
 
 - invalidated_at (timestamptz)
-- invalidated_by_allocation_id (uuid)
+- invalidated_by_allocation_id (uuid FK → allocations, nullable)
 
 - purged_at (timestamptz)
 
@@ -130,7 +140,8 @@ WHERE valid_to IS NULL
 
 GiST:
 ```
-CREATE INDEX ON occurrences USING GIST (time_range);
+CREATE INDEX idx_aeon_occurrences_on_time_range
+  ON wt_aeon.occurrences USING GIST (time_range);
 ```
 
 Uniqueness:
@@ -138,20 +149,20 @@ Uniqueness:
 UNIQUE(allocation_id, starts_at)
 ```
 
-Partial:
+Partial (active rows):
 ```
-WHERE invalidated_at IS NULL
+(allocation_id, starts_at) WHERE invalidated_at IS NULL AND purged_at IS NULL
 ```
 
 ---
 
 ## Migration 3 — Overrides
 
-**overrides**
-- id
-- occurrence_id (FK)
-- replacement_time_range (tstzrange)
-- canceled (boolean)
+Create table: **`wt_aeon.overrides`**
+- id (uuid, PK)
+- occurrence_id (uuid FK → occurrences, not null)
+- replacement_time_range (tstzrange, nullable)
+- canceled (boolean, not null, default: false)
 
 ### Constraint
 ```
@@ -235,16 +246,16 @@ Now we build the three forces that make Aeon real.
 ### Algorithm (LLM-safe)
 
 ```
-lock allocation row
+lock wt_aeon.allocations row (SELECT ... FOR UPDATE)
 determine projection_start = projected_until
 determine projection_end = requested_horizon
 
 expand schedule via IceCube
 
 for each occurrence:
-  INSERT ... ON CONFLICT DO NOTHING
+  INSERT INTO wt_aeon.occurrences ... ON CONFLICT DO NOTHING
 
-update projected_until = projection_end
+UPDATE wt_aeon.allocations SET projected_until = projection_end
 ```
 
 ### Requirements
@@ -264,10 +275,12 @@ update projected_until = projection_end
 
 ### Invalidation Query (set-based!)
 ```
-UPDATE occurrences
-SET invalidated_at = now()
+UPDATE wt_aeon.occurrences
+SET invalidated_at = now(),
+    invalidated_by_allocation_id = ?
 WHERE allocation_id = ?
 AND starts_at >= pivot
+AND invalidated_at IS NULL
 ```
 
 No Ruby loops. Ever.
@@ -499,18 +512,19 @@ Protect the primitive.
 If ClaudeCode needs a strict path:
 
 1. Engine
-2. Allocations migration
-3. Occurrences migration
-4. Overrides migration
-5. Models
-6. Projector
-7. Forker
-8. OverrideApplier
-9. DSL
-10. Worker
-11. Guards
-12. Tests
-13. Performance pass
+2. pgcrypto + `wt_aeon` schema migration
+3. Allocations migration (`wt_aeon.allocations`)
+4. Occurrences migration (`wt_aeon.occurrences`)
+5. Overrides migration (`wt_aeon.overrides`)
+6. Models
+7. Projector
+8. Forker
+9. OverrideApplier
+10. DSL
+11. Worker
+12. Guards
+13. Tests
+14. Performance pass
 
 Follow it exactly.
 

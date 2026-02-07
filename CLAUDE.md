@@ -20,9 +20,11 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 **Phase 1 — Database Physics (Migrations): COMPLETE**
 
 - `pgcrypto` extension enabled for UUID generation
-- `whittaker_tech_aeon_allocations` — polymorphic schedulable, temporal_kind enum, rrule jsonb, fork lineage via `supersedes_allocation_id`, partial unique index enforcing one active allocation per schedulable
-- `whittaker_tech_aeon_occurrences` — tstzrange `time_range` with GiST index, unique `(allocation_id, starts_at)` for idempotent upsert, partial index on active rows, FK to allocations for both `allocation_id` and `invalidated_by_allocation_id`
-- `whittaker_tech_aeon_overrides` — unique `occurrence_id` constraint (one override per occurrence), `replacement_time_range` tstzrange, `canceled` boolean
+- Dedicated PostgreSQL schema `wt_aeon` (tables use short names: `wt_aeon.allocations`, etc.)
+- `schema_format = :sql` — `structure.sql` captures PG schema, GiST indexes, partial indexes, tstzrange columns
+- `wt_aeon.allocations` — polymorphic schedulable, temporal_kind enum, rrule jsonb, fork lineage via `supersedes_allocation_id`, partial unique index enforcing one active allocation per schedulable
+- `wt_aeon.occurrences` — tstzrange `time_range` with GiST index, unique `(allocation_id, starts_at)` for idempotent upsert, partial index on active rows, FK to allocations for both `allocation_id` and `invalidated_by_allocation_id`
+- `wt_aeon.overrides` — unique `occurrence_id` constraint (one override per occurrence), `replacement_time_range` tstzrange, `canceled` boolean
 
 **Next: Phase 2 — Models (thin — enums, associations, scopes only)**
 
@@ -66,9 +68,13 @@ Phases:
 ## Database
 
 - **Postgres required** (tstzrange, GiST indexes, partial indexes)
-- UUID primary keys everywhere
+- Dedicated PostgreSQL schema `wt_aeon` — tables are `wt_aeon.allocations`, `wt_aeon.occurrences`, `wt_aeon.overrides`
+- `ApplicationRecord` sets `self.table_name_prefix = "wt_aeon."` to override the `isolate_namespace`-derived prefix
+- **UUID mandatory for all IDs, PKs, and FKs** — `id` columns, all `_id` foreign keys, and polymorphic `schedulable_id` must be `uuid`. No integer IDs. No exceptions. Host models using `Schedulable` must also use UUID primary keys.
 - All timestamps are `timestamptz` in UTC
-- Key indexes: GiST on `occurrences.time_range`, partial unique on active allocations, unique `(allocation_id, starts_at)` on occurrences
+- Key indexes: GiST on `wt_aeon.occurrences.time_range`, partial unique on active allocations, unique `(allocation_id, starts_at)` on occurrences
+- Schema format: `:sql` (`structure.sql`) — faithfully captures PG schema, GiST indexes, partial indexes, tstzrange columns
+- Foreign keys use raw `ALTER TABLE ... ADD/DROP CONSTRAINT` in `reversible` migration blocks (Rails `add_foreign_key` cannot reverse schema-qualified tables)
 
 ## Architectural Invariants
 

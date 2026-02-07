@@ -11,6 +11,14 @@ module WhittakerTech
 
       config.time_zone = "UTC"
       config.active_record.default_timezone = :utc
+
+      initializer "aeon.migrations" do |app|
+        app.config.paths["db/migrate"].concat(config.paths["db/migrate"].expanded)
+      end
+
+      initializer "aeon.schema_format" do |app|
+        app.config.active_record.schema_format = :sql
+      end
     end
   end
 end

@@ -23,7 +23,7 @@ The immutable **temporal law** attached to a host record (the *schedulable*).
 **Properties**
 - append-only (never edited in-place)
 - supersedable (forked forward; prior records remain)
-- polymorphic attachment reference (`schedulable_type`, `schedulable_id`)
+- polymorphic attachment reference (`schedulable_type`, `schedulable_id` — both uuid)
 - declared temporal shape (`temporal_kind`)
 - temporal definition (prototype) via:
   - anchor (`starts_at`)
@@ -162,64 +162,65 @@ WhittakerTech::Aeon
 
 #### Allocation (ActiveRecord)
 
-Key columns (conceptual):
-- `id` (uuid)
-- `schedulable_type`, `schedulable_id` (polymorphic)
-- `temporal_kind` (enum: instant/span/schedule)
-- `starts_at` (timestamptz)
-- `duration_seconds` (int, nullable)
+Table: `wt_aeon.allocations`
+
+Key columns:
+- `id` (uuid, PK)
+- `schedulable_type` (string, not null), `schedulable_id` (uuid, not null) — polymorphic
+- `temporal_kind` (integer enum: instant/span/schedule, not null)
+- `starts_at` (timestamptz, not null)
+- `duration_seconds` (integer, nullable)
 - `timezone` (string, nullable; required for schedule)
-- `rrule` (text/json, nullable; required for schedule)
-- `valid_from`, `valid_to` (timestamptz; valid_to nullable)
-- `projected_until` (timestamptz)
-- `supersedes_allocation_id` (uuid, nullable)  # lineage
-- `occurrence_retention_policy` (string/enum, nullable) # overrides global
+- `rrule` (jsonb, nullable; required for schedule)
+- `valid_from` (timestamptz, not null), `valid_to` (timestamptz, nullable)
+- `projected_until` (timestamptz, not null)
+- `supersedes_allocation_id` (uuid FK → allocations, nullable) — lineage
+- `occurrence_retention_policy` (string, nullable) — overrides global
 - `attachment_version_ref` (string, nullable; opaque)
 
-Recommended indexes:
-- `(schedulable_type, schedulable_id, valid_from)`
-- `(schedulable_type, schedulable_id)` partial where `valid_to IS NULL` (fast “active allocation” lookups)
-- `(valid_from, valid_to)` (optional)
+> **All IDs, PKs, and FKs are UUID.** No exceptions.
+
+Indexes:
+- `(schedulable_type, schedulable_id)` — polymorphic lookup
+- Partial unique: `(schedulable_type, schedulable_id) WHERE valid_to IS NULL` — one active allocation per schedulable
 
 ---
 
 #### Occurrence (ActiveRecord)
 
+Table: `wt_aeon.occurrences`
+
 Key columns:
-- `allocation_id` (uuid, FK)
-- `time_range` (tstzrange)  # canonical
-- `starts_at`, `ends_at` (optional convenience; redundant but ergonomic)
-- `state` (enum: active/canceled/etc.)
+- `id` (uuid, PK)
+- `allocation_id` (uuid FK → allocations, not null)
+- `time_range` (tstzrange, not null) — canonical span
+- `starts_at` (timestamptz, not null), `ends_at` (timestamptz, not null) — convenience; redundant but ergonomic
+- `state` (integer enum, not null, default: active)
 - `projection_fingerprint` (string)
 - `projected_at` (timestamptz)
 - `invalidated_at` (timestamptz, nullable)
-- `invalidated_by_allocation_id` (uuid, nullable)
-- `purged_at` (timestamptz, nullable) OR hard delete later
+- `invalidated_by_allocation_id` (uuid FK → allocations, nullable)
+- `purged_at` (timestamptz, nullable)
 
-Recommended indexes:
+Indexes:
 - GiST on `time_range`
-- B-tree on `(allocation_id, starts_at)`
-- partial index for active rows: `WHERE invalidated_at IS NULL AND purged_at IS NULL`
-- optional `(invalidated_at)` for disposal sweeps
-
-Uniqueness / identity:
-- Prefer unique constraint: `(allocation_id, starts_at)`
-  - supports idempotent projection
-  - enables “composite identity” even if a surrogate `id` exists
+- Unique: `(allocation_id, starts_at)` — idempotent projection
+- Partial: `(allocation_id, starts_at) WHERE invalidated_at IS NULL AND purged_at IS NULL` — active rows
 
 ---
 
 #### Override (ActiveRecord)
 
+Table: `wt_aeon.overrides`
+
 Key columns:
-- `occurrence_id` (FK) OR `(allocation_id, starts_at)` (choose one strategy early)
+- `id` (uuid, PK)
+- `occurrence_id` (uuid FK → occurrences, not null)
 - `replacement_time_range` (tstzrange, nullable)
-- `canceled` (bool)
-- `notes` / metadata (optional)
-- auditing fields belong outside Aeon unless lightweight is required
+- `canceled` (boolean, not null, default: false)
 
 Uniqueness:
-- One override per occurrence (or per allocation+starts_at)
+- Unique: `(occurrence_id)` — one override per occurrence
 
 ---
 
@@ -432,6 +433,26 @@ A disposer job runs periodically:
 
 Lean into Postgres — it is exceptional at temporal data.
 
+### PostgreSQL Schema
+
+All Aeon tables live in a dedicated PostgreSQL schema: **`wt_aeon`**.
+
+- Tables: `wt_aeon.allocations`, `wt_aeon.occurrences`, `wt_aeon.overrides`
+- `ApplicationRecord` sets `self.table_name_prefix = "wt_aeon."` — Rails resolves model names to schema-qualified tables
+- Schema format: `:sql` (`structure.sql`) — faithfully captures PG schema, GiST indexes, partial indexes, tstzrange columns
+- Host app `database.yml` includes `schema_search_path: "public,wt_aeon"` for dump tooling
+- Foreign keys use raw `ALTER TABLE ... ADD/DROP CONSTRAINT` in `reversible` blocks (Rails `add_foreign_key` cannot reverse schema-qualified tables)
+
+### UUID Mandate
+
+**All primary keys, foreign keys, and polymorphic IDs are UUID (`gen_random_uuid()` via `pgcrypto`).** No integer IDs. No exceptions.
+
+This includes:
+- `id` on every table (uuid PK)
+- `allocation_id`, `invalidated_by_allocation_id`, `supersedes_allocation_id` (uuid FKs)
+- `occurrence_id` (uuid FK)
+- `schedulable_id` (uuid — host models must also use UUID PKs)
+
 ### Occurrences Table
 
 - Store canonical span as `tstzrange` (`time_range`)
@@ -454,7 +475,7 @@ Lean into Postgres — it is exceptional at temporal data.
   - app-level guardrail + optional DB trigger if you ever need hard enforcement
 
 **Override constraints**
-- unique per occurrence (or allocation+starts_at)
+- unique per occurrence
 
 > Constraints are silent guardians. Let the database enforce physics.
 
