@@ -33,7 +33,40 @@ Aeon is a Rails Engine (isolated namespace `WhittakerTech::Aeon`) that serves as
 - `Override` — `belongs_to :occurrence` (no validations — DB enforces constraints)
 - `table_name_prefix` defined on `WhittakerTech::Aeon` module in `lib/whittaker_tech/aeon.rb` before engine load, preempting `isolate_namespace` override
 
-**Next: Phase 3 — Projector service**
+**Phase 3 — Projector service: COMPLETE**
+
+- Stateless service: `Projector.call(allocation_id:, target_until:)`
+- Lock allocation (`FOR UPDATE NOWAIT`), expand IceCube rrules, upsert occurrences (`INSERT ON CONFLICT DO NOTHING`), advance `projected_until` frontier
+- Handles all three temporal kinds: `instant`, `span`, `schedule`
+- Capped by `max_projection_window` and `valid_to`
+
+**Phase 4 — Forker service: COMPLETE**
+
+- Stateless service: `Forker.call(allocation_id:, pivot:, **new_attrs)`
+- Lock → validate pivot → close old allocation (`valid_to = pivot`) → create successor with lineage → invalidate future occurrences (set-based SQL) → project successor inline
+- When `pivot == valid_from` (fork-all), skips `starts_at >=` filter to handle IceCube millisecond truncation vs PG microsecond precision
+
+**Phase 5 — OverrideApplier service: COMPLETE**
+
+- Stateless service: `OverrideApplier.call(occurrence_id:, canceled:, replacement_time_range:)`
+- Finds occurrence, validates it's active (not invalidated), creates override row
+- DB unique index enforces one override per occurrence; never triggers re-projection
+
+**Phase 6 — Schedulable DSL concern: COMPLETE**
+
+- `WhittakerTech::Aeon::Schedulable` concern with `schedule :name` macro
+- Generates: `has_one :name` (active allocation, scoped `valid_to: nil`), `has_many :name_occurrences` (through)
+- Exposes verbs: `fork_future(pivot:, **new_attrs)`, `fork_all(**new_attrs)`, `override_occurrence(starts_at:, **attrs)`, `ensure_projected!(window:)`
+- `has_many :through` requires explicit `class_name: "WhittakerTech::Aeon::Occurrence"` for cross-namespace resolution
+
+**Phase 7 — Projection Worker: COMPLETE**
+
+- `ProjectionJob < ApplicationJob`, queue: `aeon_projection`
+- `perform(allocation_id, horizon_iso8601)` → delegates to `Projector.call`
+- Serializes horizon as ISO 8601 string for safe job serialization
+- No chaining, no orchestration, no callbacks — deterministic single-job execution
+
+**Next: Phase 8 — Guards (immutability enforcement)**
 
 ## Build Order (Strict)
 
@@ -49,11 +82,11 @@ Phases:
 3. ~~Occurrences migration~~ **DONE**
 4. ~~Overrides migration~~ **DONE**
 5. ~~Models (thin — enums, associations, scopes only)~~ **DONE**
-6. Projector service
-7. Forker service
-8. OverrideApplier service
-9. Schedulable DSL concern
-10. Projection worker (ActiveJob/Sidekiq)
+6. ~~Projector service~~ **DONE**
+7. ~~Forker service~~ **DONE**
+8. ~~OverrideApplier service~~ **DONE**
+9. ~~Schedulable DSL concern~~ **DONE**
+10. ~~Projection worker (ActiveJob/Sidekiq)~~ **DONE**
 11. Guards (immutability enforcement)
 12. Tests (structural, not micro)
 13. Performance pass
