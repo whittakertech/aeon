@@ -56,7 +56,7 @@ mkdocs serve                               # local MkDocs site
 - **Forker** — `Forker.call(allocation_id:, pivot:, **new_attrs)` — Closes old allocation (`valid_to = pivot`), creates successor with lineage, invalidates future occurrences via set-based SQL, projects successor inline.
 - **OverrideApplier** — `OverrideApplier.call(occurrence_id:, canceled:, replacement_time_range:)` — Creates override row. Never regenerates projections.
 - **Resolver** — `Resolver.between(schedulable:, range:, label:)` — Canonical read path. Merges allocations, occurrences, overrides, and invalidations into a sorted array of frozen `ResolvedOccurrence` value objects. Never triggers projection. Known v1 limitation: a replacement override that shifts an occurrence INTO the window (whose base was outside) will not be caught.
-- **Disposer** — Not yet implemented. Low-priority background purge of invalidated occurrences per retention policy.
+- **Disposer** — `Disposer.call(batch_size:)` — Policy-driven soft-delete of invalidated occurrences. Respects per-allocation `disposal_policy` override (`:ephemeral`, `:windowed`) falling back to global default. Skips `:historical` and `:permanent`. Sets `purged_at` in bounded batches. Never hard-deletes.
 
 ### Schedulable DSL (`app/models/concerns/whittaker_tech/aeon/schedulable.rb`)
 
