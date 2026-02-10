@@ -153,11 +153,9 @@ RSpec.describe WhittakerTech::Aeon::Resolver do
 
       # Should include both old (surviving) and new allocation occurrences
       surviving_old = WhittakerTech::Aeon::Occurrence.active
-                      .where(allocation_id: alloc.id)
-                      .count
-      if surviving_old > 0
-        expect(alloc_ids).to include(alloc.id)
-      end
+                                                     .where(allocation_id: alloc.id)
+                                                     .count
+      expect(alloc_ids).to include(alloc.id) if surviving_old > 0
       expect(alloc_ids).to include(new_alloc.id)
     end
   end

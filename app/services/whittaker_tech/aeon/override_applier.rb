@@ -21,7 +21,7 @@ module WhittakerTech
       #   raise an ArgumentError)
       # @return [Override] the created override record
       def self.call(occurrence_id:, canceled: false, replacement_time_range: nil)
-        raise ArgumentError, 'cannot cancel and replace simultaneously' if @canceled && @replacement_time_range
+        raise ArgumentError, 'cannot cancel and replace simultaneously' if canceled && replacement_time_range
 
         new(
           occurrence_id: occurrence_id,

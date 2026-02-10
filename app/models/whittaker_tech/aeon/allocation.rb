@@ -36,9 +36,9 @@ module WhittakerTech
       end
 
       validates :schedulable_label,
-               presence: true,
-               format: { with: /\A[a-z0-9_]+\z/ },
-               length: { maximum: 64 }
+                presence: true,
+                format: { with: /\A[a-z0-9_]+\z/ },
+                length: { maximum: 64 }
 
       before_validation do
         self.schedulable_label = schedulable_label.to_s.strip.downcase.presence if schedulable_label

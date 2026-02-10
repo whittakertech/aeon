@@ -79,7 +79,7 @@ RSpec.describe WhittakerTech::Aeon::Disposer do
       ephemeral_count = ephemeral_alloc.occurrences.invalidated.count
       expect(ephemeral_count).to be > 0
 
-      purged = described_class.call
+      described_class.call
       # Ephemeral should be purged; windowed (recent) should not
       expect(ephemeral_alloc.occurrences.invalidated.where(purged_at: nil).count).to eq(0)
       expect(windowed_alloc.occurrences.invalidated.where(purged_at: nil).count).to be > 0

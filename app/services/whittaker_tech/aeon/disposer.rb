@@ -59,8 +59,8 @@ module WhittakerTech
       def purge_windowed!
         cutoff = Time.current - WhittakerTech::Aeon.configuration.invalidated_retention_window
         scope = purgeable_scope
-          .where(allocation_id: allocation_ids_for_policy('windowed'))
-          .where(invalidated_at: ...cutoff)
+                .where(allocation_id: allocation_ids_for_policy('windowed'))
+                .where(invalidated_at: ...cutoff)
         execute_purge(scope)
       end
 

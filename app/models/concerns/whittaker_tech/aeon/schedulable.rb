@@ -31,12 +31,24 @@ module WhittakerTech
         # - +#fork_all(**new_attrs)+ — delegates to {Forker} at +valid_from+
         # - +#override_occurrence(starts_at:, **attrs)+ — delegates to {OverrideApplier}
         # - +#ensure_projected!(window:)+ — delegates to {Projector}
+        # - +#resolve_<name>(range:)+ — delegates to {Resolver}
         #
         # @param name [Symbol] association name (e.g. +:time_slot+)
         # @param dependent [Symbol] dependency strategy for the +has_one+
         #   association (default: +:nullify+)
         # @return [void]
         def schedule(name, dependent: :nullify)
+          define_schedule_associations(name, dependent:)
+          define_allocation_reader(name)
+          define_fork_verbs(name)
+          define_override_verb(name)
+          define_projection_verb(name)
+          define_resolver_verb(name)
+        end
+
+        private
+
+        def define_schedule_associations(name, dependent:)
           has_one name,
                   -> { where(valid_to: nil, schedulable_label: name.to_s) },
                   as: :schedulable,
@@ -48,6 +60,19 @@ module WhittakerTech
                    through: name,
                    source: :occurrences,
                    class_name: 'WhittakerTech::Aeon::Occurrence'
+        end
+
+        # Defines a private instance method +active_<name>!+ that returns
+        # the active allocation or raises ArgumentError.
+        def define_allocation_reader(name)
+          define_method(:"active_#{name}!") do
+            send(name) || raise(ArgumentError, "no active #{name} allocation")
+          end
+          private :"active_#{name}!"
+        end
+
+        def define_fork_verbs(name)
+          reader = :"active_#{name}!"
 
           # @!method fork_future(pivot:, **new_attrs)
           #   Forks the active allocation at the given pivot, closing the
@@ -58,10 +83,8 @@ module WhittakerTech
           #   @return [Allocation] the newly created successor allocation
           #   @raise [ArgumentError] if no active allocation exists
           define_method(:fork_future) do |pivot:, **new_attrs|
-            alloc = send(name)
-            raise ArgumentError, "no active #{name} allocation" unless alloc
-
-            Forker.call(allocation_id: alloc.id, pivot: pivot, **new_attrs)
+            alloc = send(reader)
+            Forker.call(allocation_id: alloc.id, pivot:, **new_attrs)
           end
 
           # @!method fork_all(**new_attrs)
@@ -71,11 +94,13 @@ module WhittakerTech
           #   @return [Allocation] the newly created successor allocation
           #   @raise [ArgumentError] if no active allocation exists
           define_method(:fork_all) do |**new_attrs|
-            alloc = send(name)
-            raise ArgumentError, "no active #{name} allocation" unless alloc
-
+            alloc = send(reader)
             Forker.call(allocation_id: alloc.id, pivot: alloc.valid_from, **new_attrs)
           end
+        end
+
+        def define_override_verb(name)
+          reader = :"active_#{name}!"
 
           # @!method override_occurrence(starts_at:, **override_attrs)
           #   Applies a surgical override (cancellation or reschedule) to a
@@ -87,12 +112,13 @@ module WhittakerTech
           #   @raise [ArgumentError] if no active allocation exists
           #   @raise [ActiveRecord::RecordNotFound] if no matching occurrence
           define_method(:override_occurrence) do |starts_at:, **override_attrs|
-            alloc = send(name)
-            raise ArgumentError, "no active #{name} allocation" unless alloc
-
-            occurrence = alloc.occurrences.find_by!(starts_at: starts_at)
+            occurrence = send(reader).occurrences.find_by!(starts_at:)
             OverrideApplier.call(occurrence_id: occurrence.id, **override_attrs)
           end
+        end
+
+        def define_projection_verb(name)
+          reader = :"active_#{name}!"
 
           # @!method ensure_projected!(window:)
           #   Ensures the active allocation is projected at least +window+ into
@@ -102,13 +128,12 @@ module WhittakerTech
           #   @return [void]
           #   @raise [ArgumentError] if no active allocation exists
           define_method(:ensure_projected!) do |window: WhittakerTech::Aeon.configuration.projection_buffer|
-            alloc = send(name)
-            raise ArgumentError, "no active #{name} allocation" unless alloc
-
-            target = Time.current + window
-            Projector.call(allocation_id: alloc.id, target_until: target)
+            alloc = send(reader)
+            Projector.call(allocation_id: alloc.id, target_until: Time.current + window)
           end
+        end
 
+        def define_resolver_verb(name)
           # @!method resolve_<name>(range:)
           #   Resolves the named schedule within the given time window,
           #   returning frozen {ResolvedOccurrence} value objects with
@@ -116,7 +141,7 @@ module WhittakerTech
           #   @param range [Range<Time>] the query window
           #   @return [Array<ResolvedOccurrence>]
           define_method(:"resolve_#{name}") do |range:|
-            Resolver.between(schedulable: self, range: range, label: name.to_s)
+            Resolver.between(schedulable: self, range:, label: name.to_s)
           end
         end
       end

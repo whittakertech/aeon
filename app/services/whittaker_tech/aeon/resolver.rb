@@ -86,32 +86,24 @@ module WhittakerTech
           override = occ.override
           next if override&.canceled?
 
+          starts_at = occ.starts_at
+          ends_at = occ.ends_at
+
           if override&.replacement_time_range
-            replacement_starts = override.replacement_time_range.begin
-            replacement_ends = override.replacement_time_range.end
+            starts_at = override.replacement_time_range.begin
+            ends_at = override.replacement_time_range.end
 
-            next unless in_window?(replacement_starts)
-
-            ResolvedOccurrence.new(
-              occurrence_id: occ.id,
-              allocation_id: occ.allocation_id,
-              starts_at: replacement_starts,
-              ends_at: replacement_ends,
-              overridden: true,
-              state: occ.state,
-              schedulable_label: label_map[occ.allocation_id]
-            )
-          else
-            ResolvedOccurrence.new(
-              occurrence_id: occ.id,
-              allocation_id: occ.allocation_id,
-              starts_at: occ.starts_at,
-              ends_at: occ.ends_at,
-              overridden: false,
-              state: occ.state,
-              schedulable_label: label_map[occ.allocation_id]
-            )
+            next unless in_window?(starts_at)
           end
+
+          ResolvedOccurrence.new(
+            occurrence_id: occ.id,
+            allocation_id: occ.allocation_id,
+            starts_at:, ends_at:,
+            overridden: override&.replacement_time_range.present?,
+            state: occ.state,
+            schedulable_label: label_map[occ.allocation_id]
+          )
         end
       end
 

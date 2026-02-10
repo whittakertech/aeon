@@ -31,7 +31,7 @@ RSpec.describe 'Immutability guards' do
       expect(alloc.reload.disposal_policy).to eq('permanent')
     end
 
-    context 'DB trigger enforcement' do
+    context 'when using DB trigger enforcement' do
       it 'blocks update_column on a hard-blocked field (starts_at)' do
         expect { alloc.update_column(:starts_at, 1.year.from_now) }
           .to raise_error(ActiveRecord::StatementInvalid, /cannot mutate temporal fields/)
@@ -43,16 +43,16 @@ RSpec.describe 'Immutability guards' do
       end
 
       it 'allows update_column on valid_to with SET LOCAL bypass' do
-        WhittakerTech::Aeon::Allocation.transaction do
-          WhittakerTech::Aeon::Allocation.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
+        described_class.transaction do
+          described_class.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
           alloc.update_column(:valid_to, Time.current)
         end
         expect(alloc.reload.valid_to).to be_present
       end
 
       it 'allows update_column on projected_until with SET LOCAL bypass' do
-        WhittakerTech::Aeon::Allocation.transaction do
-          WhittakerTech::Aeon::Allocation.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
+        described_class.transaction do
+          described_class.connection.execute("SET LOCAL aeon.bypass_guard = 'true'")
           alloc.update_column(:projected_until, 1.year.from_now)
         end
         expect(alloc.reload.projected_until).to be > alloc.starts_at
@@ -84,14 +84,14 @@ RSpec.describe 'Immutability guards' do
       expect(occurrence.reload.invalidated_at).to be_present
     end
 
-    context 'DB trigger enforcement' do
+    context 'when using DB trigger enforcement' do
       it 'blocks update_column on starts_at' do
         expect { occurrence.update_column(:starts_at, 1.year.from_now) }
           .to raise_error(ActiveRecord::StatementInvalid, /cannot mutate coordinate fields/)
       end
 
       it 'blocks update_all on time_range' do
-        scope = WhittakerTech::Aeon::Occurrence.where(id: occurrence.id)
+        scope = described_class.where(id: occurrence.id)
         new_range = "[#{1.day.from_now.iso8601},#{2.days.from_now.iso8601})"
         expect { scope.update_all(time_range: new_range) }
           .to raise_error(ActiveRecord::StatementInvalid, /cannot mutate coordinate fields/)
