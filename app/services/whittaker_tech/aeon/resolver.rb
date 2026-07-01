@@ -46,7 +46,7 @@ module WhittakerTech
         allocations = fetch_allocations
         return [].freeze if allocations.empty?
 
-        label_map = allocations.each_with_object({}) { |a, h| h[a.id] = a.schedulable_label }
+        label_map = allocations.to_h { |a| [a.id, a.schedulable_label] }
         occurrences = fetch_occurrences(allocations)
 
         resolve(occurrences, label_map).sort_by(&:starts_at).freeze

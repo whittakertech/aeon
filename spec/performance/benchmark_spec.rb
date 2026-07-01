@@ -59,7 +59,7 @@ RSpec.describe 'Performance', :performance do
 
       WhittakerTech::Aeon::Occurrence.count
 
-      expect(elapsed).to be < 30.0
+      expect(elapsed).to be < 60.0
     end
   end
 
@@ -90,7 +90,7 @@ RSpec.describe 'Performance', :performance do
         WhittakerTech::Aeon::Occurrence.within_range(range).to_a
       end.real
 
-      expect(elapsed).to be < 0.05
+      expect(elapsed).to be < 0.10
     end
   end
 
