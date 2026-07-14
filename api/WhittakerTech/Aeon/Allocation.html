@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: WhittakerTech::Aeon::Allocation
+  
+    &mdash; Documentation by YARD 0.9.45
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "WhittakerTech::Aeon::Allocation";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (A)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../WhittakerTech.html" title="WhittakerTech (module)">WhittakerTech</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Aeon.html" title="WhittakerTech::Aeon (module)">Aeon</a></span></span>
+     &raquo; 
+    <span class="title">Allocation</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: WhittakerTech::Aeon::Allocation
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="ApplicationRecord.html" title="WhittakerTech::Aeon::ApplicationRecord (class)">ApplicationRecord</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">ActiveRecord::Base</li>
+          
+            <li class="next"><span class='object_link'><a href="ApplicationRecord.html" title="WhittakerTech::Aeon::ApplicationRecord (class)">ApplicationRecord</a></span></li>
+          
+            <li class="next">WhittakerTech::Aeon::Allocation</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>app/models/whittaker_tech/aeon/allocation.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>An immutable temporal law attached to a host record via polymorphic
+<code>schedulable</code>. Allocations are never edited in place — future changes
+are expressed through <span class='object_link'><a href="Forker.html" title="WhittakerTech::Aeon::Forker (class)">Forker</a></span>, which closes the current allocation and
+creates a successor linked via <code>supersedes_allocation_id</code>.</p>
+<p>Temporal fields are protected by a <code>before_update</code> guard that raises
+ActiveRecord::ReadonlyAttributeError. Services bypass this via
++update_column+/+update_columns+ which skip callbacks by design.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="Forker.html" title="WhittakerTech::Aeon::Forker (class)">Forker</a></span></li>
+    
+      <li><span class='object_link'><a href="Projector.html" title="WhittakerTech::Aeon::Projector (class)">Projector</a></span></li>
+    
+  </ul>
+
+</div>
+  
+    <h2>
+      Constant Summary
+      <small><a href="#" class="constants_summary_toggle">collapse</a></small>
+    </h2>
+
+    <dl class="constants">
+      
+        <dt id="TEMPORAL_FIELDS-constant" class="">TEMPORAL_FIELDS =
+          <div class="docstring">
+  <div class="discussion">
+    <p>Fields that are immutable once the allocation is persisted.
+Any AR-level mutation of these triggers <code>ReadonlyAttributeError</code>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+        </dt>
+        <dd><pre class="code"><span class='qwords_beg'>%w[</span><span class='words_sep'>
+  </span><span class='tstring_content'>temporal_kind</span><span class='words_sep'> </span><span class='tstring_content'>starts_at</span><span class='words_sep'> </span><span class='tstring_content'>duration_seconds</span><span class='words_sep'> </span><span class='tstring_content'>timezone</span><span class='words_sep'> </span><span class='tstring_content'>rrule</span><span class='words_sep'>
+  </span><span class='tstring_content'>valid_from</span><span class='words_sep'> </span><span class='tstring_content'>valid_to</span><span class='words_sep'> </span><span class='tstring_content'>projected_until</span><span class='words_sep'>
+  </span><span class='tstring_content'>supersedes_allocation_id</span><span class='words_sep'> </span><span class='tstring_content'>schedulable_type</span><span class='words_sep'> </span><span class='tstring_content'>schedulable_id</span><span class='words_sep'> </span><span class='tstring_content'>schedulable_label</span><span class='words_sep'>
+</span><span class='tstring_end'>]</span></span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span></pre></dd>
+      
+    </dl>
+  
+
+
+
+
+  <h2>Instance Attribute Summary <small><a href="#" class="summary_toggle">collapse</a></small></h2>
+  <ul class="summary">
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#invalidated_occurrences-instance_method" title="#invalidated_occurrences (instance method)">#<strong>invalidated_occurrences</strong>  &#x21d2; ActiveRecord::Associations::CollectionProxy&lt;Occurrence&gt; </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Occurrences from a predecessor allocation that were invalidated when this allocation was created via a fork.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#occurrences-instance_method" title="#occurrences (instance method)">#<strong>occurrences</strong>  &#x21d2; ActiveRecord::Associations::CollectionProxy&lt;Occurrence&gt; </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Materialized occurrences projected from this allocation.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#schedulable-instance_method" title="#schedulable (instance method)">#<strong>schedulable</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>The host record this allocation governs (polymorphic).</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#superseded_allocation-instance_method" title="#superseded_allocation (instance method)">#<strong>superseded_allocation</strong>  &#x21d2; Allocation<sup>?</sup> </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>The predecessor allocation that this one replaces (fork lineage).</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#superseding_allocation-instance_method" title="#superseding_allocation (instance method)">#<strong>superseding_allocation</strong>  &#x21d2; Allocation<sup>?</sup> </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>The successor allocation that replaced this one, if any.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#temporal_kind-instance_method" title="#temporal_kind (instance method)">#<strong>temporal_kind</strong>  &#x21d2; String </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>One of <code>&quot;instant&quot;</code>, <code>&quot;span&quot;</code>, or <code>&quot;schedule&quot;</code>.</p></div></span>
+  
+</li>
+
+    
+  </ul>
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <div id="instance_attr_details" class="attr_details">
+    <h2>Instance Attribute Details</h2>
+    
+      
+      <span id=""></span>
+      <div class="method_details first">
+  <h3 class="signature first" id="invalidated_occurrences-instance_method">
+  
+    #<strong>invalidated_occurrences</strong>  &#x21d2; <tt>ActiveRecord::Associations::CollectionProxy&lt;<span class='object_link'><a href="Occurrence.html" title="WhittakerTech::Aeon::Occurrence (class)">Occurrence</a></span>&gt;</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Occurrences from a predecessor allocation that were invalidated when
+this allocation was created via a fork.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>ActiveRecord::Associations::CollectionProxy&lt;<span class='object_link'><a href="Occurrence.html" title="WhittakerTech::Aeon::Occurrence (class)">Occurrence</a></span>&gt;</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+77
+78
+79
+80</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/allocation.rb', line 77</span>
+
+<span class='id identifier rubyid_has_many'>has_many</span> <span class='symbol'>:invalidated_occurrences</span><span class='comma'>,</span>
+<span class='label'>class_name:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>WhittakerTech::Aeon::Occurrence</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+<span class='label'>foreign_key:</span> <span class='symbol'>:invalidated_by_allocation_id</span><span class='comma'>,</span>
+<span class='label'>inverse_of:</span> <span class='symbol'>:invalidated_by_allocation</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="occurrences-instance_method">
+  
+    #<strong>occurrences</strong>  &#x21d2; <tt>ActiveRecord::Associations::CollectionProxy&lt;<span class='object_link'><a href="Occurrence.html" title="WhittakerTech::Aeon::Occurrence (class)">Occurrence</a></span>&gt;</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Materialized occurrences projected from this allocation.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>ActiveRecord::Associations::CollectionProxy&lt;<span class='object_link'><a href="Occurrence.html" title="WhittakerTech::Aeon::Occurrence (class)">Occurrence</a></span>&gt;</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+71</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/allocation.rb', line 71</span>
+
+<span class='id identifier rubyid_has_many'>has_many</span> <span class='symbol'>:occurrences</span><span class='comma'>,</span> <span class='label'>inverse_of:</span> <span class='symbol'>:allocation</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="schedulable=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="schedulable-instance_method">
+  
+    #<strong>schedulable</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>The host record this allocation governs (polymorphic).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+49</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/allocation.rb', line 49</span>
+
+<span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:schedulable</span><span class='comma'>,</span> <span class='label'>polymorphic:</span> <span class='kw'>true</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="superseded_allocation=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="superseded_allocation-instance_method">
+  
+    #<strong>superseded_allocation</strong>  &#x21d2; <tt><span class='object_link'><a href="" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt><sup>?</sup> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>The predecessor allocation that this one replaces (fork lineage).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt>, <tt>nil</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+54
+55
+56
+57
+58</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/allocation.rb', line 54</span>
+
+<span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:superseded_allocation</span><span class='comma'>,</span>
+<span class='label'>class_name:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>WhittakerTech::Aeon::Allocation</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+<span class='label'>foreign_key:</span> <span class='symbol'>:supersedes_allocation_id</span><span class='comma'>,</span>
+<span class='label'>inverse_of:</span> <span class='symbol'>:superseding_allocation</span><span class='comma'>,</span>
+<span class='label'>optional:</span> <span class='kw'>true</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="superseding_allocation-instance_method">
+  
+    #<strong>superseding_allocation</strong>  &#x21d2; <tt><span class='object_link'><a href="" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt><sup>?</sup>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>The successor allocation that replaced this one, if any.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt>, <tt>nil</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+63
+64
+65
+66</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/allocation.rb', line 63</span>
+
+<span class='id identifier rubyid_has_one'>has_one</span> <span class='symbol'>:superseding_allocation</span><span class='comma'>,</span>
+<span class='label'>class_name:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>WhittakerTech::Aeon::Allocation</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+<span class='label'>foreign_key:</span> <span class='symbol'>:supersedes_allocation_id</span><span class='comma'>,</span>
+<span class='label'>inverse_of:</span> <span class='symbol'>:superseded_allocation</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="temporal_kind=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="temporal_kind-instance_method">
+  
+    #<strong>temporal_kind</strong>  &#x21d2; <tt>String</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns one of <code>&quot;instant&quot;</code>, <code>&quot;span&quot;</code>, or <code>&quot;schedule&quot;</code>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>one of <code>&quot;instant&quot;</code>, <code>&quot;span&quot;</code>, or <code>&quot;schedule&quot;</code></p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+27</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/allocation.rb', line 27</span>
+
+<span class='id identifier rubyid_enum'>enum</span> <span class='symbol'>:temporal_kind</span><span class='comma'>,</span> <span class='lbrace'>{</span> <span class='label'>instant:</span> <span class='int'>0</span><span class='comma'>,</span> <span class='label'>span:</span> <span class='int'>1</span><span class='comma'>,</span> <span class='label'>schedule:</span> <span class='int'>2</span> <span class='rbrace'>}</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+
+</div>
+
+      <div id="footer">
+  Generated on Tue Jul 14 21:28:07 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-3.1.7).
+</div>
+
+    </div>
+  </body>
+</html>

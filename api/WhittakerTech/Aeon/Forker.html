@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: WhittakerTech::Aeon::Forker
+  
+    &mdash; Documentation by YARD 0.9.45
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "WhittakerTech::Aeon::Forker";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (F)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../WhittakerTech.html" title="WhittakerTech (module)">WhittakerTech</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Aeon.html" title="WhittakerTech::Aeon (module)">Aeon</a></span></span>
+     &raquo; 
+    <span class="title">Forker</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: WhittakerTech::Aeon::Forker
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">WhittakerTech::Aeon::Forker</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>app/services/whittaker_tech/aeon/forker.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Stateless service that performs forward-only timeline forking. Closes the
+current <span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span> at a pivot point, creates a successor with lineage,
+set-based invalidates future <span class='object_link'><a href="Occurrence.html" title="WhittakerTech::Aeon::Occurrence (class)">Occurrence</a></span> rows, and inline-projects the
+new allocation.</p>
+<p>Two modes:</p>
+<ul>
+<li><strong>Fork future</strong> — <code>pivot &gt; valid_from</code>: past occurrences are preserved,
+only future ones are invalidated.</li>
+<li><strong>Fork all</strong> — <code>pivot == valid_from</code>: every occurrence is invalidated
+and the allocation is fully replaced.</li>
+</ul>
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Fork at a future point</p></div></h5>
+      
+      <pre class="example code"><code><span class='const'>Forker</span><span class='period'>.</span><span class='id identifier rubyid_call'><span class='object_link'><a href="#call-class_method" title="WhittakerTech::Aeon::Forker.call (method)">call</a></span></span><span class='lparen'>(</span><span class='label'>allocation_id:</span> <span class='id identifier rubyid_alloc'>alloc</span><span class='period'>.</span><span class='id identifier rubyid_id'>id</span><span class='comma'>,</span> <span class='label'>pivot:</span> <span class='int'>1</span><span class='period'>.</span><span class='id identifier rubyid_week'>week</span><span class='period'>.</span><span class='id identifier rubyid_from_now'>from_now</span><span class='comma'>,</span> <span class='label'>rrule:</span> <span class='id identifier rubyid_new_rule'>new_rule</span><span class='rparen'>)</span></code></pre>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Replace entirely (fork all)</p></div></h5>
+      
+      <pre class="example code"><code><span class='const'>Forker</span><span class='period'>.</span><span class='id identifier rubyid_call'><span class='object_link'><a href="#call-class_method" title="WhittakerTech::Aeon::Forker.call (method)">call</a></span></span><span class='lparen'>(</span><span class='label'>allocation_id:</span> <span class='id identifier rubyid_alloc'>alloc</span><span class='period'>.</span><span class='id identifier rubyid_id'>id</span><span class='comma'>,</span> <span class='label'>pivot:</span> <span class='id identifier rubyid_alloc'>alloc</span><span class='period'>.</span><span class='id identifier rubyid_valid_from'>valid_from</span><span class='comma'>,</span> <span class='label'>rrule:</span> <span class='id identifier rubyid_new_rule'>new_rule</span><span class='rparen'>)</span></code></pre>
+    
+  </div>
+
+
+</div>
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#call-class_method" title="call (class method)">.<strong>call</strong>(allocation_id:, pivot:, **new_attrs)  &#x21d2; Allocation </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>The newly created successor.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+    <h2>
+      Instance Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#call-instance_method" title="#call (instance method)">#<strong>call</strong>  &#x21d2; Allocation </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Executes the fork within a serialised transaction.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">#<strong>initialize</strong>(allocation_id:, pivot:, new_attrs:)  &#x21d2; Forker </a>
+    
+
+    
+  </span>
+  
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>A new instance of Forker.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <h3 class="signature first" id="initialize-instance_method">
+  
+    #<strong>initialize</strong>(allocation_id:, pivot:, new_attrs:)  &#x21d2; <tt><span class='object_link'><a href="" title="WhittakerTech::Aeon::Forker (class)">Forker</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns a new instance of Forker.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>allocation_id</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>UUID of the allocation to fork</p></div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>pivot</span>
+      
+      
+        <span class='type'>(<tt>Time</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the point at which to split the timeline</p></div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>new_attrs</span>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>attribute overrides for the successor</p></div>
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+33
+34
+35
+36
+37</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/services/whittaker_tech/aeon/forker.rb', line 33</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='label'>allocation_id:</span><span class='comma'>,</span> <span class='label'>pivot:</span><span class='comma'>,</span> <span class='label'>new_attrs:</span><span class='rparen'>)</span>
+  <span class='ivar'>@allocation_id</span> <span class='op'>=</span> <span class='id identifier rubyid_allocation_id'>allocation_id</span>
+  <span class='ivar'>@pivot</span> <span class='op'>=</span> <span class='id identifier rubyid_pivot'>pivot</span>
+  <span class='ivar'>@new_attrs</span> <span class='op'>=</span> <span class='id identifier rubyid_new_attrs'>new_attrs</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="call-class_method">
+  
+    .<strong>call</strong>(allocation_id:, pivot:, **new_attrs)  &#x21d2; <tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns the newly created successor.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>allocation_id</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>UUID of the allocation to fork</p></div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>pivot</span>
+      
+      
+        <span class='type'>(<tt>Time</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the point at which to split the timeline</p></div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>new_attrs</span>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>attribute overrides for the successor allocation</p></div>
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the newly created successor</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+26
+27
+28</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/services/whittaker_tech/aeon/forker.rb', line 26</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_call'>call</span><span class='lparen'>(</span><span class='label'>allocation_id:</span><span class='comma'>,</span> <span class='label'>pivot:</span><span class='comma'>,</span> <span class='op'>**</span><span class='id identifier rubyid_new_attrs'>new_attrs</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='label'>allocation_id:</span> <span class='id identifier rubyid_allocation_id'>allocation_id</span><span class='comma'>,</span> <span class='label'>pivot:</span> <span class='id identifier rubyid_pivot'>pivot</span><span class='comma'>,</span> <span class='label'>new_attrs:</span> <span class='id identifier rubyid_new_attrs'>new_attrs</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_call'>call</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="call-instance_method">
+  
+    #<strong>call</strong>  &#x21d2; <tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Executes the fork within a serialised transaction.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the successor allocation</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/services/whittaker_tech/aeon/forker.rb', line 42</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_call'>call</span>
+  <span class='const'><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></span><span class='period'>.</span><span class='id identifier rubyid_transaction'>transaction</span> <span class='kw'>do</span>
+    <span class='const'><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></span><span class='period'>.</span><span class='id identifier rubyid_connection'>connection</span><span class='period'>.</span><span class='id identifier rubyid_execute'>execute</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>SET LOCAL aeon.bypass_guard = &#39;true&#39;</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_old_allocation'>old_allocation</span> <span class='op'>=</span> <span class='id identifier rubyid_lock_allocation!'>lock_allocation!</span>
+    <span class='id identifier rubyid_validate_pivot!'>validate_pivot!</span><span class='lparen'>(</span><span class='id identifier rubyid_old_allocation'>old_allocation</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_close_allocation!'>close_allocation!</span><span class='lparen'>(</span><span class='id identifier rubyid_old_allocation'>old_allocation</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_new_allocation'>new_allocation</span> <span class='op'>=</span> <span class='id identifier rubyid_create_successor!'>create_successor!</span><span class='lparen'>(</span><span class='id identifier rubyid_old_allocation'>old_allocation</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_invalidate_future_occurrences!'>invalidate_future_occurrences!</span><span class='lparen'>(</span><span class='id identifier rubyid_old_allocation'>old_allocation</span><span class='comma'>,</span> <span class='id identifier rubyid_new_allocation'>new_allocation</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_project_successor!'>project_successor!</span><span class='lparen'>(</span><span class='id identifier rubyid_new_allocation'>new_allocation</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_new_allocation'>new_allocation</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Tue Jul 14 21:28:07 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-3.1.7).
+</div>
+
+    </div>
+  </body>
+</html>

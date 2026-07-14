@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: WhittakerTech::Aeon::Occurrence
+  
+    &mdash; Documentation by YARD 0.9.45
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "WhittakerTech::Aeon::Occurrence";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (O)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../WhittakerTech.html" title="WhittakerTech (module)">WhittakerTech</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Aeon.html" title="WhittakerTech::Aeon (module)">Aeon</a></span></span>
+     &raquo; 
+    <span class="title">Occurrence</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: WhittakerTech::Aeon::Occurrence
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="ApplicationRecord.html" title="WhittakerTech::Aeon::ApplicationRecord (class)">ApplicationRecord</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">ActiveRecord::Base</li>
+          
+            <li class="next"><span class='object_link'><a href="ApplicationRecord.html" title="WhittakerTech::Aeon::ApplicationRecord (class)">ApplicationRecord</a></span></li>
+          
+            <li class="next">WhittakerTech::Aeon::Occurrence</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>app/models/whittaker_tech/aeon/occurrence.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>A materialized prediction projected from an <span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span>. Each occurrence
+represents a single point or span on the timeline, with an immutable
+<code>time_range</code> (tstzrange) backed by a GiST index for efficient range
+queries.</p>
+<p>Coordinates (+time_range+, <code>starts_at</code>, <code>ends_at</code>, <code>allocation_id</code>) are
+frozen after creation. Only invalidation metadata and <code>state</code> may change.
+Surgical per-instance deviations are expressed via <span class='object_link'><a href="Override.html" title="WhittakerTech::Aeon::Override (class)">Override</a></span>, not by
+mutating the occurrence.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="Projector.html" title="WhittakerTech::Aeon::Projector (class)">Projector</a></span></li>
+    
+      <li><span class='object_link'><a href="OverrideApplier.html" title="WhittakerTech::Aeon::OverrideApplier (class)">OverrideApplier</a></span></li>
+    
+  </ul>
+
+</div>
+  
+    <h2>
+      Constant Summary
+      <small><a href="#" class="constants_summary_toggle">collapse</a></small>
+    </h2>
+
+    <dl class="constants">
+      
+        <dt id="COORDINATE_FIELDS-constant" class="">COORDINATE_FIELDS =
+          <div class="docstring">
+  <div class="discussion">
+    <p>Fields that are immutable once the occurrence is persisted.
+Any AR-level mutation of these triggers <code>ReadonlyAttributeError</code>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+        </dt>
+        <dd><pre class="code"><span class='qwords_beg'>%w[</span><span class='words_sep'>
+  </span><span class='tstring_content'>time_range</span><span class='words_sep'> </span><span class='tstring_content'>starts_at</span><span class='words_sep'> </span><span class='tstring_content'>ends_at</span><span class='words_sep'> </span><span class='tstring_content'>allocation_id</span><span class='words_sep'>
+</span><span class='tstring_end'>]</span></span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span></pre></dd>
+      
+    </dl>
+  
+
+
+
+
+  <h2>Instance Attribute Summary <small><a href="#" class="summary_toggle">collapse</a></small></h2>
+  <ul class="summary">
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#allocation-instance_method" title="#allocation (instance method)">#<strong>allocation</strong>  &#x21d2; Allocation </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>The allocation that projected this occurrence.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#invalidated_by_allocation-instance_method" title="#invalidated_by_allocation (instance method)">#<strong>invalidated_by_allocation</strong>  &#x21d2; Allocation<sup>?</sup> </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>The successor allocation that caused this occurrence to be invalidated during a fork operation.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#override-instance_method" title="#override (instance method)">#<strong>override</strong>  &#x21d2; Override<sup>?</sup> </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Optional surgical deviation (cancellation or reschedule).</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#state-instance_method" title="#state (instance method)">#<strong>state</strong>  &#x21d2; String </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Currently only <code>&quot;active&quot;</code> (0).</p></div></span>
+  
+</li>
+
+    
+  </ul>
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#active-class_method" title="active (class method)">.<strong>active</strong>  &#x21d2; ActiveRecord::Relation </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Occurrences that have not been invalidated or purged.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#invalidated-class_method" title="invalidated (class method)">.<strong>invalidated</strong>  &#x21d2; ActiveRecord::Relation </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Occurrences that have been invalidated by a fork.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#within_range-class_method" title="within_range (class method)">.<strong>within_range</strong>(range)  &#x21d2; ActiveRecord::Relation </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Occurrences whose <code>time_range</code> overlaps the given range, using the GiST-indexed <code>&amp;&amp;</code> operator.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <div id="instance_attr_details" class="attr_details">
+    <h2>Instance Attribute Details</h2>
+    
+      
+      <span id="allocation=-instance_method"></span>
+      <div class="method_details first">
+  <h3 class="signature first" id="allocation-instance_method">
+  
+    #<strong>allocation</strong>  &#x21d2; <tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>The allocation that projected this occurrence.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+40</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 40</span>
+
+<span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:allocation</span><span class='comma'>,</span> <span class='label'>inverse_of:</span> <span class='symbol'>:occurrences</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="invalidated_by_allocation=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="invalidated_by_allocation-instance_method">
+  
+    #<strong>invalidated_by_allocation</strong>  &#x21d2; <tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt><sup>?</sup> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>The successor allocation that caused this occurrence to be invalidated
+during a fork operation.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Allocation.html" title="WhittakerTech::Aeon::Allocation (class)">Allocation</a></span></tt>, <tt>nil</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+46
+47
+48
+49</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 46</span>
+
+<span class='id identifier rubyid_belongs_to'>belongs_to</span> <span class='symbol'>:invalidated_by_allocation</span><span class='comma'>,</span>
+<span class='label'>class_name:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>WhittakerTech::Aeon::Allocation</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>
+<span class='label'>inverse_of:</span> <span class='symbol'>:invalidated_occurrences</span><span class='comma'>,</span>
+<span class='label'>optional:</span> <span class='kw'>true</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="override-instance_method">
+  
+    #<strong>override</strong>  &#x21d2; <tt><span class='object_link'><a href="Override.html" title="WhittakerTech::Aeon::Override (class)">Override</a></span></tt><sup>?</sup>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Optional surgical deviation (cancellation or reschedule).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Override.html" title="WhittakerTech::Aeon::Override (class)">Override</a></span></tt>, <tt>nil</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+54</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 54</span>
+
+<span class='id identifier rubyid_has_one'>has_one</span> <span class='symbol'>:override</span><span class='comma'>,</span> <span class='label'>inverse_of:</span> <span class='symbol'>:occurrence</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="state=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="state-instance_method">
+  
+    #<strong>state</strong>  &#x21d2; <tt>String</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns currently only <code>&quot;active&quot;</code> (0).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>currently only <code>&quot;active&quot;</code> (0)</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+26</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 26</span>
+
+<span class='id identifier rubyid_enum'>enum</span> <span class='symbol'>:state</span><span class='comma'>,</span> <span class='lbrace'>{</span> <span class='label'>active:</span> <span class='int'>0</span> <span class='rbrace'>}</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="active-class_method">
+  
+    .<strong>active</strong>  &#x21d2; <tt>ActiveRecord::Relation</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Occurrences that have not been invalidated or purged.
+Matches the partial index <code>idx_aeon_occurrences_active</code>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>ActiveRecord::Relation</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+61</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 61</span>
+
+<span class='id identifier rubyid_scope'>scope</span> <span class='symbol'>:active</span><span class='comma'>,</span> <span class='tlambda'>-&gt;</span> <span class='tlambeg'>{</span> <span class='id identifier rubyid_where'>where</span><span class='lparen'>(</span><span class='label'>invalidated_at:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>purged_at:</span> <span class='kw'>nil</span><span class='rparen'>)</span> <span class='rbrace'>}</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="invalidated-class_method">
+  
+    .<strong>invalidated</strong>  &#x21d2; <tt>ActiveRecord::Relation</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Occurrences that have been invalidated by a fork.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>ActiveRecord::Relation</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+67</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 67</span>
+
+<span class='id identifier rubyid_scope'>scope</span> <span class='symbol'>:invalidated</span><span class='comma'>,</span> <span class='tlambda'>-&gt;</span> <span class='tlambeg'>{</span> <span class='id identifier rubyid_where'>where</span><span class='period'>.</span><span class='id identifier rubyid_not'>not</span><span class='lparen'>(</span><span class='label'>invalidated_at:</span> <span class='kw'>nil</span><span class='rparen'>)</span> <span class='rbrace'>}</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="within_range-class_method">
+  
+    .<strong>within_range</strong>(range)  &#x21d2; <tt>ActiveRecord::Relation</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Occurrences whose <code>time_range</code> overlaps the given range, using the
+GiST-indexed <code>&amp;&amp;</code> operator.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>range</span>
+      
+      
+        <span class='type'>(<tt>Range</tt>, <tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>a PG-compatible tstzrange</p></div>
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>ActiveRecord::Relation</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+75</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'app/models/whittaker_tech/aeon/occurrence.rb', line 75</span>
+
+<span class='id identifier rubyid_scope'>scope</span> <span class='symbol'>:within_range</span><span class='comma'>,</span> <span class='tlambda'>-&gt;</span><span class='lparen'>(</span><span class='id identifier rubyid_range'>range</span><span class='rparen'>)</span> <span class='tlambeg'>{</span> <span class='id identifier rubyid_where'>where</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>time_range &amp;&amp; ?</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_range'>range</span><span class='rparen'>)</span> <span class='rbrace'>}</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Tue Jul 14 21:28:07 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-3.1.7).
+</div>
+
+    </div>
+  </body>
+</html>
